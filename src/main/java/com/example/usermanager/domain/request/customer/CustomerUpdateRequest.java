@@ -1,5 +1,6 @@
 package com.example.usermanager.domain.request.customer;
 
+import com.example.usermanager.domain.entity.Relative;
 import com.example.usermanager.domain.model.Address;
 import com.example.usermanager.domain.model.IdentityType;
 import com.example.usermanager.enumeration.Gender;
@@ -11,6 +12,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -48,4 +51,5 @@ public class CustomerUpdateRequest {
 
     StatusCustomer statusCustomer;
 
+    List<Relative> relatives;
 }

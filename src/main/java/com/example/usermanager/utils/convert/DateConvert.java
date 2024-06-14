@@ -12,7 +12,7 @@ public class DateConvert {
     }
 
     public static Date formatDate(String date) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         return dateFormat.parse(date);
     }
 

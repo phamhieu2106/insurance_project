@@ -7,6 +7,7 @@ import com.example.usermanager.domain.model.IdentityType;
 import com.example.usermanager.domain.request.customer.CustomerAddRequest;
 import com.example.usermanager.domain.request.customer.CustomerUpdateRequest;
 import com.example.usermanager.domain.response.customer.CustomerResponse;
+import com.example.usermanager.domain.response.relative.RelativeResponse;
 import com.example.usermanager.enumeration.StatusCustomer;
 import com.example.usermanager.exception.InvalidValueException;
 import com.example.usermanager.exception.ParseValueException;
@@ -48,9 +49,16 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseEntity<List<CustomerResponse>> findAll() {
         return ResponseEntity.ok(
                 this.customerRepository.findAllBySoftDeleteIsFalse().stream()
-                        .map(customer -> modelMapper.map(customer, CustomerResponse.class)
-                        ).toList()
-        );
+                        .map(customer -> {
+                            List<RelativeResponse> relatives =
+                                    this.relativeRepository.findAllByCustomerIdAndSoftDeleteIsFalse(customer.getId())
+                                            .stream().map(
+                                                    relative -> modelMapper.map(relative, RelativeResponse.class)
+                                            ).toList();
+                            CustomerResponse customerResponse = this.modelMapper.map(customer, CustomerResponse.class);
+                            customerResponse.setRelatives(relatives);
+                            return customerResponse;
+                        }).toList());
     }
 
     @Override
@@ -129,7 +137,7 @@ public class CustomerServiceImpl implements CustomerService {
         } catch (ParseException parseException) {
             throw new ParseValueException("Can't parse String to LocalDate");
         }
-        customer.setCustomerCode(generateCustomerCode());
+        customer.setCustomerCode(customer.getCustomerCode());
         customer.setCustomerName(request.getCustomerName());
         customer.setGender(request.getGender());
         customer.setPhoneNumber(request.getPhoneNumber());
@@ -142,25 +150,47 @@ public class CustomerServiceImpl implements CustomerService {
 
         CustomerResponse customerResponse = modelMapper.map(customerRepository.save(customer), CustomerResponse.class);
 
+        updateRelatives(request, customerResponse.getId());
 
         return ResponseEntity.ok(customerResponse);
     }
 
     @Override
-    @Cacheable(value = "customerResponse", key = "#id")
     public ResponseEntity<CustomerResponse> find(String id) {
-
         if (id == null || id.isEmpty() || id.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
 
-        return customerOptional.map(customer -> ResponseEntity.ok(modelMapper.map(customer, CustomerResponse.class)))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        if (customerOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return customerOptional.map(customer -> ResponseEntity.ok(modelMapper.map(customer, CustomerResponse.class))).orElse(null);
 
     }
-    
+
+    @Cacheable(value = "customerResponse", key = "#id")
+    public CustomerResponse findCustomerById(String id) {
+
+        if (id == null || id.isEmpty() || id.isBlank()) {
+            return null;
+        }
+
+        Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
+        return customerOptional.map(customer -> {
+            List<RelativeResponse> relatives =
+                    this.relativeRepository.findAllByCustomerIdAndSoftDeleteIsFalse(customer.getId())
+                            .stream().map(
+                                    relative -> modelMapper.map(relative, RelativeResponse.class)
+                            ).toList();
+            CustomerResponse customerResponse = this.modelMapper.map(customer, CustomerResponse.class);
+            customerResponse.setRelatives(relatives);
+            return customerResponse;
+        }).orElse(null);
+    }
+
     private String generateCustomerCode() {
         long count = this.customerRepository.count();
 
@@ -180,6 +210,32 @@ public class CustomerServiceImpl implements CustomerService {
         request.getRelatives().forEach(
                 relative -> {
                     if (validationAddRelative(relative, customerId)) {
+                        Relative newRelative = new Relative();
+                        newRelative.setRelativeName(relative.getRelativeName());
+                        newRelative.setAge(relative.getAge());
+                        newRelative.setJobName(relative.getJobName());
+                        newRelative.setCustomerId(customerId);
+                        newRelative.setCreatedAt(LocalDateTime.now());
+                        this.relativeRepository.save(newRelative);
+                    }
+                }
+        );
+    }
+
+    private void updateRelatives(CustomerUpdateRequest request, String customerId) {
+
+        request.getRelatives().forEach(
+                relative -> {
+                    Optional<Relative> optionalRelative = this.relativeRepository
+                            .findByCustomerIdAndRelativeNameAndSoftDeleteIsFalse(customerId, relative.getRelativeName());
+                    if (optionalRelative.isPresent()) {
+                        Relative newRelative = optionalRelative.get();
+                        newRelative.setRelativeName(relative.getRelativeName());
+                        newRelative.setAge(relative.getAge());
+                        newRelative.setJobName(relative.getJobName());
+                        newRelative.setUpdatedAt(LocalDateTime.now());
+                        this.relativeRepository.save(newRelative);
+                    } else {
                         Relative newRelative = new Relative();
                         newRelative.setRelativeName(relative.getRelativeName());
                         newRelative.setAge(relative.getAge());

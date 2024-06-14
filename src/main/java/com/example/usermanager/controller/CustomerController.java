@@ -6,6 +6,7 @@ import com.example.usermanager.domain.response.customer.CustomerResponse;
 import com.example.usermanager.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +30,11 @@ public class CustomerController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponse> findById(@PathVariable String id) {
-        return this.customerService.find(id);
+        CustomerResponse customerResponse = this.customerService.findCustomerById(id);
+        if (customerResponse == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(customerResponse);
     }
 
     @PostMapping
