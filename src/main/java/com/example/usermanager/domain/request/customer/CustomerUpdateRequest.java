@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -39,10 +40,10 @@ public class CustomerUpdateRequest {
     String email;
 
     @NotNull
-    String dateOfBirth;
+    Date dateOfBirth;
 
     @NotNull
-    Address address;
+    List<Address> addresses;
 
     String jobName;
 

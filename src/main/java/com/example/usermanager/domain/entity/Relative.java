@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -29,11 +29,11 @@ public class Relative {
 
     Boolean softDelete = false;
 
-    LocalDateTime createdAt;
+    Date createdAt;
 
     String createdBy;
 
-    LocalDateTime updatedAt;
+    Date updatedAt;
 
     String lastUpdatedBy;
 }

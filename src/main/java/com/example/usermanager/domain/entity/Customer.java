@@ -4,6 +4,8 @@ import com.example.usermanager.domain.model.Address;
 import com.example.usermanager.domain.model.IdentityType;
 import com.example.usermanager.enumeration.Gender;
 import com.example.usermanager.enumeration.StatusCustomer;
+import com.example.usermanager.utils.convert.AddressAttributeConverter;
+import com.example.usermanager.utils.convert.IdentityTypeAttributeConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,8 +13,8 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -36,16 +38,16 @@ public class Customer implements Serializable {
 
     String email;
 
-    LocalDate dateOfBirth;
+    Date dateOfBirth;
 
-    @Embedded
-    Address address;
+    @Convert(converter = AddressAttributeConverter.class)
+    List<Address> addresses;
 
     String jobName;
 
     String insuranceId;
 
-    @Embedded
+    @Convert(converter = IdentityTypeAttributeConverter.class)
     IdentityType proof;
 
     @Enumerated(EnumType.STRING)
@@ -53,11 +55,11 @@ public class Customer implements Serializable {
 
     Boolean softDelete = false;
 
-    LocalDateTime createdAt;
+    Date createdAt;
 
     String createdBy;
 
-    LocalDateTime updatedAt;
+    Date updatedAt;
 
     String lastUpdatedBy;
 }

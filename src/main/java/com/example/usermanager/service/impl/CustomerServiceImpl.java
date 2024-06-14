@@ -10,12 +10,10 @@ import com.example.usermanager.domain.response.customer.CustomerResponse;
 import com.example.usermanager.domain.response.relative.RelativeResponse;
 import com.example.usermanager.enumeration.StatusCustomer;
 import com.example.usermanager.exception.InvalidValueException;
-import com.example.usermanager.exception.ParseValueException;
 import com.example.usermanager.repository.CustomerRepository;
 import com.example.usermanager.repository.RelativeRepository;
 import com.example.usermanager.service.CustomerService;
 import com.example.usermanager.utils.contraint.RegexConstants;
-import com.example.usermanager.utils.convert.DateConvert;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.text.ParseException;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,24 +68,22 @@ public class CustomerServiceImpl implements CustomerService {
 
 
         Customer customer = new Customer();
-        try {
-            customer.setDateOfBirth(DateConvert.convertDateToLocalDate(request.getDateOfBirth()));
-        } catch (ParseException parseException) {
-            throw new ParseValueException("Can't parse String to LocalDate");
-        }
+        customer.setDateOfBirth(request.getDateOfBirth());
         customer.setCustomerCode(generateCustomerCode());
         customer.setCustomerName(request.getCustomerName());
         customer.setGender(request.getGender());
         customer.setPhoneNumber(request.getPhoneNumber());
         customer.setEmail(request.getEmail());
-        customer.setAddress(request.getAddress());
+        customer.setAddresses(request.getAddresses());
         customer.setProof(request.getProof());
         customer.setJobName(request.getJobName());
         customer.setStatusCustomer(StatusCustomer.POTENTIAL);
-        customer.setCreatedAt(LocalDateTime.now());
+        customer.setCreatedAt(new Date());
 
         CustomerResponse customerResponse = modelMapper.map(customerRepository.save(customer), CustomerResponse.class);
-        createRelatives(request, customerResponse.getId());
+
+        List<RelativeResponse> relativeResponses = createRelatives(request, customerResponse.getId());
+        customerResponse.setRelatives(relativeResponses);
 
         return ResponseEntity.ok(customerResponse);
     }
@@ -132,25 +127,22 @@ public class CustomerServiceImpl implements CustomerService {
         if (!validationUpdateCustomer(customer, request)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        try {
-            customer.setDateOfBirth(DateConvert.convertDateToLocalDate(request.getDateOfBirth()));
-        } catch (ParseException parseException) {
-            throw new ParseValueException("Can't parse String to LocalDate");
-        }
+        customer.setDateOfBirth(request.getDateOfBirth());
         customer.setCustomerCode(customer.getCustomerCode());
         customer.setCustomerName(request.getCustomerName());
         customer.setGender(request.getGender());
         customer.setPhoneNumber(request.getPhoneNumber());
         customer.setEmail(request.getEmail());
-        customer.setAddress(request.getAddress());
+        customer.setAddresses(request.getAddresses());
         customer.setProof(request.getProof());
         customer.setJobName(request.getJobName());
         customer.setStatusCustomer(request.getStatusCustomer());
-        customer.setUpdatedAt(LocalDateTime.now());
+        customer.setUpdatedAt(new Date());
 
         CustomerResponse customerResponse = modelMapper.map(customerRepository.save(customer), CustomerResponse.class);
 
-        updateRelatives(request, customerResponse.getId());
+        List<RelativeResponse> relativeResponses = updateRelatives(request, customerResponse.getId());
+        customerResponse.setRelatives(relativeResponses);
 
         return ResponseEntity.ok(customerResponse);
     }
@@ -206,8 +198,8 @@ public class CustomerServiceImpl implements CustomerService {
         return customerCode;
     }
 
-    private void createRelatives(CustomerAddRequest request, String customerId) {
-        request.getRelatives().forEach(
+    private List<RelativeResponse> createRelatives(CustomerAddRequest request, String customerId) {
+        List<Relative> relatives = request.getRelatives().stream().map(
                 relative -> {
                     if (validationAddRelative(relative, customerId)) {
                         Relative newRelative = new Relative();
@@ -215,37 +207,47 @@ public class CustomerServiceImpl implements CustomerService {
                         newRelative.setAge(relative.getAge());
                         newRelative.setJobName(relative.getJobName());
                         newRelative.setCustomerId(customerId);
-                        newRelative.setCreatedAt(LocalDateTime.now());
-                        this.relativeRepository.save(newRelative);
+                        newRelative.setCreatedAt(new Date());
+                        return this.relativeRepository.save(newRelative);
                     }
+                    return null;
                 }
-        );
+        ).toList();
+
+        return relatives.stream().map(
+                relative -> modelMapper.map(relative, RelativeResponse.class)
+        ).toList();
     }
 
-    private void updateRelatives(CustomerUpdateRequest request, String customerId) {
+    private List<RelativeResponse> updateRelatives(CustomerUpdateRequest request, String customerId) {
 
-        request.getRelatives().forEach(
+        List<Relative> relatives = request.getRelatives().stream().map(
                 relative -> {
                     Optional<Relative> optionalRelative = this.relativeRepository
                             .findByCustomerIdAndRelativeNameAndSoftDeleteIsFalse(customerId, relative.getRelativeName());
+                    Relative newRelative;
                     if (optionalRelative.isPresent()) {
-                        Relative newRelative = optionalRelative.get();
+                        newRelative = optionalRelative.get();
                         newRelative.setRelativeName(relative.getRelativeName());
                         newRelative.setAge(relative.getAge());
                         newRelative.setJobName(relative.getJobName());
-                        newRelative.setUpdatedAt(LocalDateTime.now());
-                        this.relativeRepository.save(newRelative);
+                        newRelative.setUpdatedAt(new Date());
                     } else {
-                        Relative newRelative = new Relative();
+                        newRelative = new Relative();
                         newRelative.setRelativeName(relative.getRelativeName());
                         newRelative.setAge(relative.getAge());
                         newRelative.setJobName(relative.getJobName());
                         newRelative.setCustomerId(customerId);
-                        newRelative.setCreatedAt(LocalDateTime.now());
-                        this.relativeRepository.save(newRelative);
+                        newRelative.setCreatedAt(new Date());
                     }
+                    return this.relativeRepository.save(newRelative);
                 }
-        );
+        ).toList();
+
+        return relatives.stream().map(
+                relative -> modelMapper.map(relative, RelativeResponse.class)
+        ).toList();
+
     }
 
     private boolean validationAddRelative(Relative relative, String customerId) {
@@ -276,20 +278,20 @@ public class CustomerServiceImpl implements CustomerService {
 
             if (request.getPhoneNumber() == null
                     || request.getPhoneNumber().isBlank() || request.getPhoneNumber().isEmpty()
-                    || !isPhoneNumberValid(request.getPhoneNumber())
+                    || !isValidPhoneNumber(request.getPhoneNumber())
                     || this.customerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
                 return false;
             }
 
             if (request.getEmail() == null
                     || request.getEmail().isBlank() || request.getEmail().isEmpty()
-                    || !isEmailValid(request.getEmail())
+                    || !isValidEmail(request.getEmail())
                     || this.customerRepository.existsByEmail(request.getEmail())) {
                 return false;
             }
 
             if (request.getProof() == null
-                    || !isProofValid(request.getProof())
+                    || !isValidProof(request.getProof())
                     || this.customerRepository.existsCustomerByProof(request.getProof())) {
                 return false;
             }
@@ -303,7 +305,12 @@ public class CustomerServiceImpl implements CustomerService {
                 return false;
             }
 
-            return isAddressValid(request.getAddress());
+            for (Address address : request.getAddresses()) {
+                if (!isValidAddress(address)) {
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }
@@ -316,7 +323,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             if (request.getPhoneNumber() == null
                     || request.getPhoneNumber().isBlank() || request.getPhoneNumber().isEmpty()
-                    || !isPhoneNumberValid(request.getPhoneNumber())
+                    || !isValidPhoneNumber(request.getPhoneNumber())
                     || this.customerRepository.existsByPhoneNumberAndIdIsNot(
                     request.getPhoneNumber(), customer.getId())) {
                 return false;
@@ -324,7 +331,7 @@ public class CustomerServiceImpl implements CustomerService {
 
             if (request.getEmail() == null
                     || request.getEmail().isBlank() || request.getEmail().isEmpty()
-                    || !isEmailValid(request.getEmail())
+                    || !isValidEmail(request.getEmail())
                     || this.customerRepository.existsByEmailAndIdIsNot(
                     request.getEmail(), customer.getId())) {
                 return false;
@@ -332,7 +339,7 @@ public class CustomerServiceImpl implements CustomerService {
 
 
             if (request.getProof() == null
-                    || !isProofValid(request.getProof())
+                    || !isValidProof(request.getProof())
                     || this.customerRepository.existsCustomerByProofAndIdIsNot(
                     request.getProof(), customer.getId())) {
                 return false;
@@ -353,12 +360,18 @@ public class CustomerServiceImpl implements CustomerService {
                 return false;
             }
 
-            return isAddressValid(request.getAddress());
+            for (Address address : request.getAddresses()) {
+                if (!isValidAddress(address)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
         return false;
     }
 
-    private boolean isProofValid(IdentityType identityType) {
+    private boolean isValidProof(IdentityType identityType) {
         switch (identityType.getTypeIdentity()) {
             case IDENTITY_CARD -> {
                 return RegexConstants.REGEX_IDENTITY_CARD.matcher(identityType.getNumberIdentity()).matches();
@@ -375,15 +388,15 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    private boolean isPhoneNumberValid(String phoneNumber) {
+    private boolean isValidPhoneNumber(String phoneNumber) {
         return RegexConstants.REGEX_PHONE_NUMBER.matcher(phoneNumber).matches();
     }
 
-    private boolean isEmailValid(String email) {
+    private boolean isValidEmail(String email) {
         return RegexConstants.REGEX_EMAIL.matcher(email).matches();
     }
 
-    private boolean isAddressValid(Address address) {
+    private boolean isValidAddress(Address address) {
         if (address == null || address.getNational() == null
                 || address.getNational().isBlank() || address.getNational().isEmpty()) {
             return false;

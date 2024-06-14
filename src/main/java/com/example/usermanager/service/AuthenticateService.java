@@ -14,4 +14,5 @@ public interface AuthenticateService {
     User registerByAdmin(UserRequest registerRequest);
 
     String testAuth();
+
 }

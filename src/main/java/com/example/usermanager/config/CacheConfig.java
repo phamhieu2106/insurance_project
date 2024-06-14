@@ -1,6 +1,6 @@
 package com.example.usermanager.config;
 
-import com.example.usermanager.utils.convert.BytesToLocalDateConvert;
+import com.example.usermanager.utils.convert.BytesToDateConvert;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,8 +53,8 @@ public class CacheConfig {
     }
 
     @Bean
-    public RedisCustomConversions redisCustomConversions(BytesToLocalDateConvert bytesToLocalDateTimeConverter) {
-        return new RedisCustomConversions(List.of(bytesToLocalDateTimeConverter));
+    public RedisCustomConversions redisCustomConversions(BytesToDateConvert bytesToDateConvert) {
+        return new RedisCustomConversions(List.of(bytesToDateConvert));
     }
 
 }

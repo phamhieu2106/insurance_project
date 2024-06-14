@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -23,11 +23,9 @@ public class Contract {
 
     String contractCode;
 
-    Long customerId;
+    Date contractStartDate;
 
-    LocalDateTime contractStartDate;
-
-    LocalDateTime contractEndDate;
+    Date contractEndDate;
 
     Double contractPayAmount;
 
@@ -37,6 +35,9 @@ public class Contract {
 
     Double contractPayedAmount;
 
+    String customerId;
+
+
     @Enumerated(EnumType.STRING)
     StatusPayment statusPayment;
 
@@ -45,11 +46,11 @@ public class Contract {
 
     Boolean softDelete = false;
 
-    LocalDateTime createdAt;
+    Date createdAt;
 
     String createdBy;
 
-    LocalDateTime updatedAt;
+    Date updatedAt;
 
     String lastUpdatedBy;
 

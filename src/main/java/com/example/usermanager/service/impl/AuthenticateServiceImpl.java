@@ -20,7 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -88,7 +88,7 @@ public class AuthenticateServiceImpl implements AuthenticateService {
         user.setUsername(registerRequest.getUsername());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setRole(Role.NHAN_VIEN);
-        user.setCreatedAt(LocalDateTime.now());
+        user.setCreatedAt(new Date());
         user.setUserRole(UserRole.USER);
 
         userRepository.save(user);
@@ -115,7 +115,8 @@ public class AuthenticateServiceImpl implements AuthenticateService {
         user.setUsername(registerRequest.getUsername());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setUserRole(UserRole.USER);
-        user.setCreatedAt(LocalDateTime.now());
+        user.setRole(Role.NHAN_VIEN);
+        user.setCreatedAt(new Date());
 
 
         return userRepository.save(user);
@@ -146,10 +147,11 @@ public class AuthenticateServiceImpl implements AuthenticateService {
         admin.setUsername("phamhieu2106");
         admin.setPassword(passwordEncoder.encode("123"));
         admin.setAdminName("Pham Hieu");
-        admin.setCreatedAt(LocalDateTime.now());
+        admin.setCreatedAt(new Date());
         admin.setCreatedBy("Test-System");
         admin.setUserRole(UserRole.ADMIN);
         adminRepository.save(admin);
         return "OK";
     }
+
 }

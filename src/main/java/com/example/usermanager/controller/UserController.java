@@ -46,4 +46,5 @@ public class UserController {
     public ResponseEntity<UserResponse> deleteUser(@PathVariable String id) {
         return this.userService.delete(id);
     }
+
 }

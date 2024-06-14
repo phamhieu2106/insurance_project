@@ -10,8 +10,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -34,11 +34,11 @@ public class Admin implements UserDetails {
     @Enumerated(EnumType.STRING)
     UserRole userRole = UserRole.ADMIN;
 
-    LocalDateTime createdAt;
+    Date createdAt;
 
     String createdBy;
 
-    LocalDateTime updatedAt;
+    Date updatedAt;
 
     String lastUpdatedBy;
 

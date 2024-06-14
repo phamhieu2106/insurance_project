@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
 import java.util.List;
 
 
@@ -39,10 +40,10 @@ public class CustomerAddRequest {
     String email;
 
     @NotNull
-    String dateOfBirth;
+    Date dateOfBirth;
 
     @NotNull
-    Address address; // address
+    List<Address> addresses;
 
     String jobName;
 
