@@ -6,6 +6,7 @@ import com.example.usermanager.domain.model.Address;
 import com.example.usermanager.domain.model.IdentityType;
 import com.example.usermanager.domain.request.customer.CustomerAddRequest;
 import com.example.usermanager.domain.request.customer.CustomerUpdateRequest;
+import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.customer.CustomerResponse;
 import com.example.usermanager.domain.response.relative.RelativeResponse;
 import com.example.usermanager.enumeration.StatusCustomer;
@@ -21,7 +22,6 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -49,29 +49,33 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public ResponseEntity<List<CustomerResponse>> findAll() {
-        return ResponseEntity.ok(
-                this.customerRepository.findAllBySoftDeleteIsFalse().stream()
-                        .map(customer -> {
-                            List<RelativeResponse> relatives =
-                                    this.relativeRepository.findAllByCustomerIdAndSoftDeleteIsFalse(customer.getId())
-                                            .stream().map(
-                                                    relative -> modelMapper.map(relative, RelativeResponse.class)
-                                            ).toList();
-                            CustomerResponse customerResponse = this.modelMapper.map(customer, CustomerResponse.class);
-                            customerResponse.setRelatives(relatives);
-                            return customerResponse;
-                        }).toList());
+    public WrapperResponse findAll() {
+        List<CustomerResponse> list = this.customerRepository.findAllBySoftDeleteIsFalse().stream()
+                .map(customer -> {
+                    List<RelativeResponse> relatives =
+                            this.relativeRepository.findAllByCustomerIdAndSoftDeleteIsFalse(customer.getId())
+                                    .stream().map(
+                                            relative -> modelMapper.map(relative, RelativeResponse.class)
+                                    ).toList();
+                    CustomerResponse customerResponse = this.modelMapper.map(customer, CustomerResponse.class);
+                    customerResponse.setRelatives(relatives);
+                    return customerResponse;
+                }).toList();
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), list, HttpStatus.OK
+        );
     }
 
     @Override
     @Transactional(rollbackOn = InvalidValueException.class)
-    public ResponseEntity<CustomerResponse> add(CustomerAddRequest request) {
+    public WrapperResponse add(CustomerAddRequest request) {
 
         if (!validationAddCustomer(request)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
-
 
         Customer customer = new Customer();
         customer.setDateOfBirth(request.getDateOfBirth());
@@ -91,20 +95,26 @@ public class CustomerServiceImpl implements CustomerService {
         List<RelativeResponse> relativeResponses = createRelatives(request, customerResponse.getId());
         customerResponse.setRelatives(relativeResponses);
 
-        return ResponseEntity.ok(customerResponse);
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.CREATED.getReasonPhrase(), customerResponse, HttpStatus.CREATED
+        );
     }
 
     @Override
-    public ResponseEntity<CustomerResponse> delete(String id) {
+    public WrapperResponse delete(String id) {
 
         if (id == null || id.isEmpty() || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
 
         Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
 
         if (customerOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
 
         Customer customer = customerOptional.get();
@@ -112,27 +122,36 @@ public class CustomerServiceImpl implements CustomerService {
 
         this.customerRepository.save(customer);
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.NO_CONTENT.getReasonPhrase(), null, HttpStatus.NO_CONTENT
+        );
     }
 
     @Override
     @Transactional
-    public ResponseEntity<CustomerResponse> update(CustomerUpdateRequest request, String id) {
+    public WrapperResponse update(CustomerUpdateRequest request, String id) {
 
         if (id == null || id.isEmpty() || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
 
         Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
 
         if (customerOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
 
         Customer customer = customerOptional.get();
         if (!validationUpdateCustomer(customer, request)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
+
         customer.setDateOfBirth(request.getDateOfBirth());
         customer.setCustomerCode(customer.getCustomerCode());
         customer.setCustomerName(request.getCustomerName());
@@ -159,7 +178,9 @@ public class CustomerServiceImpl implements CustomerService {
         List<RelativeResponse> relativeResponses = updateRelatives(request, customerResponse.getId());
         customerResponse.setRelatives(relativeResponses);
 
-        return ResponseEntity.ok(customerResponse);
+        return WrapperResponse.returnResponse(
+                false, HttpStatus.OK.getReasonPhrase(), customerResponse, HttpStatus.OK
+        );
     }
 
     @Cacheable(value = "customerResponse", key = "'customer_' + #id")
@@ -184,18 +205,26 @@ public class CustomerServiceImpl implements CustomerService {
 
 
     @Override
-    public ResponseEntity<CustomerResponse> find(String id) {
+    public WrapperResponse find(String id) {
         if (id == null || id.isEmpty() || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
 
         Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
 
         if (customerOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
 
-        return customerOptional.map(customer -> ResponseEntity.ok(modelMapper.map(customer, CustomerResponse.class))).orElse(null);
+        CustomerResponse customerResponse = modelMapper.map(customerOptional.get(), CustomerResponse.class);
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), customerResponse, HttpStatus.OK
+        );
 
     }
 

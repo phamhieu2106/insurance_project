@@ -1,21 +1,19 @@
 package com.example.usermanager.service;
 
-import org.springframework.http.ResponseEntity;
+import com.example.usermanager.domain.response.WrapperResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
-public interface IService<Q, U, P> {
+public interface IService<Q, U> {
 
-    ResponseEntity<List<P>> findAll();
+    WrapperResponse findAll();
 
-    ResponseEntity<P> add(Q request);
+    WrapperResponse add(Q request);
 
-    ResponseEntity<P> delete(String id);
+    WrapperResponse delete(String id);
 
-    ResponseEntity<P> update(U request, String id);
+    WrapperResponse update(U request, String id);
 
-    ResponseEntity<P> find(String id);
+    WrapperResponse find(String id);
 
 }

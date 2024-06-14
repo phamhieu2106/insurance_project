@@ -3,6 +3,7 @@ package com.example.usermanager.service.impl;
 import com.example.usermanager.domain.entity.User;
 import com.example.usermanager.domain.request.user.UserRequest;
 import com.example.usermanager.domain.request.user.UserUpdateRequest;
+import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.user.UserResponse;
 import com.example.usermanager.repository.UserRepository;
 import com.example.usermanager.service.AuthenticateService;
@@ -10,7 +11,6 @@ import com.example.usermanager.service.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -34,69 +34,109 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<List<UserResponse>> findAll() {
+    public WrapperResponse findAll() {
         List<UserResponse> userResponses = userRepository.findAllBySoftDeleteIsFalse()
                 .stream().map(user -> modelMapper.map(user, UserResponse.class)).toList();
-        return ResponseEntity.ok(userResponses);
+
+        if (userResponses.isEmpty()) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
+        }
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), userResponses, HttpStatus.OK
+        );
     }
 
     @Override
-    public ResponseEntity<UserResponse> add(UserRequest request) {
+    public WrapperResponse add(UserRequest request) {
         UserResponse userResponse = modelMapper.map(
-                authenticateService.registerByAdmin(request), UserResponse.class);
-        return ResponseEntity.ok(userResponse);
+                authenticateService.registerByAdmin(request).getData(), UserResponse.class);
+
+        if (userResponse == null) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
+        }
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.CREATED.getReasonPhrase(), userResponse, HttpStatus.CREATED
+        );
     }
 
     @Override
-    public ResponseEntity<UserResponse> delete(String id) {
+    public WrapperResponse delete(String id) {
         if (id == null || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
 
         Optional<User> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
 
         User user = userOptional.get();
         user.setSoftDelete(true);
 
-        return ResponseEntity.ok(modelMapper.map(userRepository.save(user), UserResponse.class));
+        userRepository.save(user);
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), null, HttpStatus.OK
+        );
     }
 
 
     @Override
     //   admin Update
-    public ResponseEntity<UserResponse> update(UserUpdateRequest request, String id) {
+    public WrapperResponse update(UserUpdateRequest request, String id) {
         if (id == null || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
 
         Optional<User> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
 
         User user = userOptional.get();
         user.setRole(request.getRole());
         user.setUpdatedAt(new Date());
 
-        return ResponseEntity.ok(modelMapper.map(userRepository.save(user), UserResponse.class));
+        UserResponse userResponse = modelMapper.map(userRepository.save(user), UserResponse.class);
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), userResponse, HttpStatus.OK
+        );
     }
 
     @Override
-    public ResponseEntity<UserResponse> find(String id) {
+    public WrapperResponse find(String id) {
         if (id == null || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
         }
 
         Optional<User> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
         if (userOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
         }
 
         User user = userOptional.get();
-        return ResponseEntity.ok(modelMapper.map(user, UserResponse.class));
+        UserResponse userResponse = modelMapper.map(user, UserResponse.class);
 
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.FOUND.getReasonPhrase(), userResponse, HttpStatus.FOUND
+        );
     }
 }
