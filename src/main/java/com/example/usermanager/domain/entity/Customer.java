@@ -45,8 +45,6 @@ public class Customer implements Serializable {
 
     String jobName;
 
-    String insuranceId;
-
     @Convert(converter = IdentityTypeAttributeConverter.class)
     IdentityType proof;
 

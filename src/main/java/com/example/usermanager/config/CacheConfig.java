@@ -36,7 +36,7 @@ public class CacheConfig {
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofSeconds(300)) // Thiết lập TTL cho mục cache ( 300 giây)
+                .entryTtl(Duration.ofSeconds(600)) // Thiết lập TTL cho mục cache ( 300 giây)
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
         return RedisCacheManager.builder(connectionFactory)
@@ -56,5 +56,6 @@ public class CacheConfig {
     public RedisCustomConversions redisCustomConversions(BytesToDateConvert bytesToDateConvert) {
         return new RedisCustomConversions(List.of(bytesToDateConvert));
     }
+
 
 }

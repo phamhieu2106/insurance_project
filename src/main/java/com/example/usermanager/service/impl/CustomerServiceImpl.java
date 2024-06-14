@@ -17,6 +17,8 @@ import com.example.usermanager.utils.contraint.RegexConstants;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -32,14 +35,17 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
     private final RelativeRepository relativeRepository;
     private final ModelMapper modelMapper;
+    private final CacheManager cacheManager;
 
     @Autowired
     public CustomerServiceImpl(CustomerRepository customerRepository,
-                               RelativeRepository relativeRepository, ModelMapper modelMapper) {
+                               RelativeRepository relativeRepository
+            , ModelMapper modelMapper, CacheManager cacheManager) {
         super();
         this.customerRepository = customerRepository;
         this.relativeRepository = relativeRepository;
         this.modelMapper = modelMapper;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -139,6 +145,15 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setStatusCustomer(request.getStatusCustomer());
         customer.setUpdatedAt(new Date());
 
+        // Lấy ID của khách hàng
+        clearCustomerResponseCache(customer.getId());
+
+        //tạo key mới
+        String newCacheKey = "customer_" + customer.getId();
+        Objects.requireNonNull(cacheManager
+                        .getCache("customerResponse"))
+                .put(newCacheKey, modelMapper.map(customer, CustomerResponse.class));
+
         CustomerResponse customerResponse = modelMapper.map(customerRepository.save(customer), CustomerResponse.class);
 
         List<RelativeResponse> relativeResponses = updateRelatives(request, customerResponse.getId());
@@ -147,23 +162,7 @@ public class CustomerServiceImpl implements CustomerService {
         return ResponseEntity.ok(customerResponse);
     }
 
-    @Override
-    public ResponseEntity<CustomerResponse> find(String id) {
-        if (id == null || id.isEmpty() || id.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-        Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
-
-        if (customerOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
-        return customerOptional.map(customer -> ResponseEntity.ok(modelMapper.map(customer, CustomerResponse.class))).orElse(null);
-
-    }
-
-    @Cacheable(value = "customerResponse", key = "#id")
+    @Cacheable(value = "customerResponse", key = "'customer_' + #id")
     public CustomerResponse findCustomerById(String id) {
 
         if (id == null || id.isEmpty() || id.isBlank()) {
@@ -182,6 +181,24 @@ public class CustomerServiceImpl implements CustomerService {
             return customerResponse;
         }).orElse(null);
     }
+
+
+    @Override
+    public ResponseEntity<CustomerResponse> find(String id) {
+        if (id == null || id.isEmpty() || id.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        Optional<Customer> customerOptional = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(id);
+
+        if (customerOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        return customerOptional.map(customer -> ResponseEntity.ok(modelMapper.map(customer, CustomerResponse.class))).orElse(null);
+
+    }
+
 
     private String generateCustomerCode() {
         long count = this.customerRepository.count();
@@ -427,4 +444,10 @@ public class CustomerServiceImpl implements CustomerService {
         return true;
     }
 
+    private void clearCustomerResponseCache(String customerId) {
+        Cache customerResponseCache = cacheManager.getCache("customerResponse");
+        if (customerResponseCache != null) {
+            customerResponseCache.evict("customer_" + customerId);
+        }
+    }
 }
