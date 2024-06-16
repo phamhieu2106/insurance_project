@@ -36,7 +36,7 @@ public class AddressAttributeConverter implements AttributeConverter<List<Addres
             return objectMapper.readValue(value, new TypeReference<>() {
             });
         } catch (Exception e) {
-            System.out.println("Cannot convert JSON into Address");
+            System.out.println("Cannot convert JSON into List Address");
             return Collections.emptyList();
         }
     }
