@@ -23,9 +23,9 @@ public class Insurance {
 
     String insuranceName;
 
-    Double paymentAmount;
+    Double totalPaymentFeeAmount;
 
-    Double insuranceAmount;
+    Double totalInsuranceTotalFeeAmount;
 
     Boolean softDelete = false;
 
