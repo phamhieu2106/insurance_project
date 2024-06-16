@@ -32,6 +32,10 @@ import java.util.Optional;
 @Service
 public class CustomerServiceImpl implements CustomerService {
 
+    private final String VIETNAM_CODE = "VN";
+    private final String CUSTOMER_VALUE_NAME = "customerResponse";
+    private final String CUSTOMER_KEY_NAME = "customer_";
+
     private final CustomerRepository customerRepository;
     private final RelativeRepository relativeRepository;
     private final ModelMapper modelMapper;
@@ -168,9 +172,9 @@ public class CustomerServiceImpl implements CustomerService {
         clearCustomerResponseCache(customer.getId());
 
         //tạo key mới
-        String newCacheKey = "customer_" + customer.getId();
+        String newCacheKey = CUSTOMER_KEY_NAME + customer.getId();
         Objects.requireNonNull(cacheManager
-                        .getCache("customerResponse"))
+                        .getCache(CUSTOMER_VALUE_NAME))
                 .put(newCacheKey, modelMapper.map(customer, CustomerResponse.class));
 
         CustomerResponse customerResponse = modelMapper.map(customerRepository.save(customer), CustomerResponse.class);
@@ -183,7 +187,7 @@ public class CustomerServiceImpl implements CustomerService {
         );
     }
 
-    @Cacheable(value = "customerResponse", key = "'customer_' + #id")
+    @Cacheable(value = CUSTOMER_VALUE_NAME, key = "'customer_' + #id")
     public CustomerResponse findCustomerById(String id) {
 
         if (id == null || id.isEmpty() || id.isBlank()) {
@@ -447,7 +451,7 @@ public class CustomerServiceImpl implements CustomerService {
                 || address.getNational().isBlank() || address.getNational().isEmpty()) {
             return false;
         }
-        if ("VN".equals(address.getNational())) {
+        if (VIETNAM_CODE.equals(address.getNational())) {
             if (address.getHouseNumber() == null
                     || address.getHouseNumber().isBlank() || address.getHouseNumber().isEmpty()) {
                 return false;
@@ -474,9 +478,9 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private void clearCustomerResponseCache(String customerId) {
-        Cache customerResponseCache = cacheManager.getCache("customerResponse");
+        Cache customerResponseCache = cacheManager.getCache(CUSTOMER_VALUE_NAME);
         if (customerResponseCache != null) {
-            customerResponseCache.evict("customer_" + customerId);
+            customerResponseCache.evict(CUSTOMER_KEY_NAME + customerId);
         }
     }
 }

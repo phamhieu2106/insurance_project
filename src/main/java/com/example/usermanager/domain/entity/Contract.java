@@ -2,6 +2,7 @@ package com.example.usermanager.domain.entity;
 
 import com.example.usermanager.enumeration.StatusContract;
 import com.example.usermanager.enumeration.StatusPayment;
+import com.example.usermanager.utils.convert.InsuranceAttributeConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -9,6 +10,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,16 +29,18 @@ public class Contract {
 
     Date contractEndDate;
 
-    Double contractPayAmount;
+    Double contractTotalPayAmount;
 
-    Double contractInsurancePayAmount;
+    Double contractTotalInsurancePayAmount;
 
-    Double contractNeedPayAmount;
+    Double contractTotalNeedPayAmount;
 
-    Double contractPayedAmount;
+    Double contractTotalPayedAmount;
 
     String customerId;
 
+    @Convert(converter = InsuranceAttributeConverter.class)
+    List<Insurance> insurances;
 
     @Enumerated(EnumType.STRING)
     StatusPayment statusPayment;

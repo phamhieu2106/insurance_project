@@ -1,4 +1,4 @@
-package com.example.usermanager.domain.request.insurance;
+package com.example.usermanager.domain.request.contract;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,20 +9,30 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
+import java.util.List;
+
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class InsuranceUpdateRequest {
+public class ContractAddRequest {
+
     @NotNull
     @NotEmpty
     @NotBlank
-    String insuranceName;
+    String customerId;
+
+    @NotNull
+    Date contractStartDate;
+    @NotNull
+    Date contractEndDate;
 
     @NotNull
     @Min(value = 0)
-    Double totalPaymentFeeAmount;
+    Double contractTotalPayedAmount;
 
     @NotNull
-    @Min(value = 0)
-    Double totalInsuranceTotalFeeAmount;
+    List<String> insurancesId;
+
+
 }

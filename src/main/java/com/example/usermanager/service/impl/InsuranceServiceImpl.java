@@ -98,6 +98,13 @@ public class InsuranceServiceImpl implements InsuranceService {
 
     @Override
     public WrapperResponse update(InsuranceUpdateRequest request, String id) {
+
+        if (id == null || id.isEmpty() || id.isBlank()) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
+        }
+        
         if (request == null) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
