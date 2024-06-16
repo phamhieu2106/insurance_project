@@ -11,7 +11,6 @@ import com.example.usermanager.domain.response.customer.CustomerResponse;
 import com.example.usermanager.domain.response.insurance.InsuranceResponse;
 import com.example.usermanager.enumeration.StatusContract;
 import com.example.usermanager.enumeration.StatusPayment;
-import com.example.usermanager.exception.InvalidValueException;
 import com.example.usermanager.exception.NotFoundException;
 import com.example.usermanager.repository.ContractRepository;
 import com.example.usermanager.repository.CustomerRepository;
@@ -84,11 +83,6 @@ public class ContractServiceImpl implements ContractService {
             );
         }
 
-        CustomerResponse customerResponse = modelMapper.map(
-                this.customerRepository.findCustomerByIdAndSoftDeleteIsFalse(request.getCustomerId())
-                , CustomerResponse.class
-        );
-
         Contract contract = new Contract();
         contract.setContractCode(generateContractCode());
         contract.setCustomerId(request.getCustomerId());
@@ -98,13 +92,18 @@ public class ContractServiceImpl implements ContractService {
         contract.setCreatedAt(new Date());
 
         //money amount
-        List<InsuranceResponse> insurances = handleInsuranceContract(request.getInsurancesId());
-        double totalContractPayAmount = insurances
+        List<Insurance> insurances = handleInsuranceContract(request.getInsurancesId());
+        List<InsuranceResponse> insuranceResponses = insurances.stream().map(
+                insurance -> modelMapper.map(insurance, InsuranceResponse.class)
+        ).toList();
+        double totalContractPayAmount = insuranceResponses
                 .stream().mapToDouble(InsuranceResponse::getTotalPaymentFeeAmount).sum();
-        double totalInsuranceFeeAmount = insurances
+        double totalInsuranceFeeAmount = insuranceResponses
                 .stream().mapToDouble(InsuranceResponse::getTotalInsuranceTotalFeeAmount).sum();
         double totalNeedPayAmount = totalContractPayAmount - contract.getContractTotalPayedAmount();
 
+        //set insurance
+        contract.setInsurances(insurances);
         //set total amount
         contract.setContractTotalPayAmount(totalContractPayAmount);
         contract.setContractTotalInsurancePayAmount(totalInsuranceFeeAmount);
@@ -123,12 +122,19 @@ public class ContractServiceImpl implements ContractService {
         if (now >= contractStartDate && now <= contractEndDate) contract.setStatusContract(StatusContract.EFFECTED);
         if (now < contractStartDate) contract.setStatusContract(StatusContract.NOT_EFFECT);
 
+        //CustomerResponse
+        Customer customer = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(
+                request.getCustomerId()).orElse(null);
+        CustomerResponse customerResponse = modelMapper.map(
+                customer
+                , CustomerResponse.class
+        );
 
         //convert Contract to ContractResponse
         ContractResponse contractResponse = modelMapper.map(
                 this.contractRepository.save(contract), ContractResponse.class);
         contractResponse.setCustomer(customerResponse);
-        contractResponse.setInsurances(insurances);
+//        contractResponse.setInsurances(insuranceResponses);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), contractResponse, HttpStatus.OK
@@ -211,10 +217,13 @@ public class ContractServiceImpl implements ContractService {
         contract.setContractTotalPayedAmount(request.getContractTotalPayedAmount());
         contract.setUpdatedAt(new Date());
 
-        List<InsuranceResponse> insurances = handleInsuranceContract(request.getInsurancesId());
-        double totalContractPayAmount = insurances
+        List<Insurance> insurances = handleInsuranceContract(request.getInsurancesId());
+        List<InsuranceResponse> insuranceResponses = insurances.stream().map(
+                insurance -> modelMapper.map(insurance, InsuranceResponse.class)
+        ).toList();
+        double totalContractPayAmount = insuranceResponses
                 .stream().mapToDouble(InsuranceResponse::getTotalPaymentFeeAmount).sum();
-        double totalInsuranceFeeAmount = insurances
+        double totalInsuranceFeeAmount = insuranceResponses
                 .stream().mapToDouble(InsuranceResponse::getTotalInsuranceTotalFeeAmount).sum();
         double totalNeedPayAmount = totalContractPayAmount - contract.getContractTotalPayedAmount();
 
@@ -238,7 +247,7 @@ public class ContractServiceImpl implements ContractService {
         ContractResponse contractResponse = modelMapper.map(
                 this.contractRepository.save(contract), ContractResponse.class);
         contractResponse.setCustomer(customerResponse);
-        contractResponse.setInsurances(insurances);
+        contractResponse.setInsurances(insuranceResponses);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), contractResponse, HttpStatus.OK
@@ -283,14 +292,14 @@ public class ContractServiceImpl implements ContractService {
         );
     }
 
-    private List<InsuranceResponse> handleInsuranceContract(List<String> insuranceIds) {
+    private List<Insurance> handleInsuranceContract(List<String> insuranceIds) {
         return insuranceIds.stream().map(
                 id -> {
                     Insurance insurance = this.insuranceRepository.findById(id).orElse(null);
                     if (insurance == null) {
-                        throw new InvalidValueException("Null Insurance!");
+                        throw new NotFoundException("Null Insurance!");
                     }
-                    return modelMapper.map(insurance, InsuranceResponse.class);
+                    return insurance;
                 }
         ).toList();
     }

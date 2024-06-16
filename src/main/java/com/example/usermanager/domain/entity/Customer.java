@@ -41,6 +41,7 @@ public class Customer implements Serializable {
     Date dateOfBirth;
 
     @Convert(converter = AddressAttributeConverter.class)
+    @Column(length = 10000)
     List<Address> addresses;
 
     String jobName;

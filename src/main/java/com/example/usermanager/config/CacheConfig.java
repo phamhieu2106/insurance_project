@@ -19,20 +19,6 @@ import java.util.List;
 @EnableCaching
 public class CacheConfig {
 
-//    @Bean
-//    public CacheManager cacheManager() {
-//        CompositeCacheManager compositeCacheManager = new CompositeCacheManager();
-//
-//        ConcurrentMapCacheManager customerCacheManager = new ConcurrentMapCacheManager("customerResponse");
-////        ConcurrentMapCacheManager userCacheManager = new ConcurrentMapCacheManager("customerResponse");
-//
-//        // Thêm các CacheManager vào CompositeCacheManager
-//        compositeCacheManager.setCacheManagers(List.of(customerCacheManager));
-//        compositeCacheManager.setFallbackToNoOpCache(true); //để tránh lỗi nếu không có CacheManager nào khớp
-//
-//        return compositeCacheManager;
-//    }
-
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()

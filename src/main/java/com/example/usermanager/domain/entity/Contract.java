@@ -40,6 +40,7 @@ public class Contract {
     String customerId;
 
     @Convert(converter = InsuranceAttributeConverter.class)
+    @Column(length = 10000)
     List<Insurance> insurances;
 
     @Enumerated(EnumType.STRING)
