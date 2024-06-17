@@ -13,7 +13,7 @@ import java.util.Date;
 @Entity
 @Table(name = "insurance")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Insurance {
+public class InsuranceEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

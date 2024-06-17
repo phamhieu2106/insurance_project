@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IdentityType {
+public class IdentityModel {
 
     @Enumerated(EnumType.STRING)
     Proof typeIdentity;

@@ -1,6 +1,6 @@
 package com.example.usermanager.utils.convert;
 
-import com.example.usermanager.domain.model.Address;
+import com.example.usermanager.domain.model.AddressModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,15 +10,15 @@ import java.util.Collections;
 import java.util.List;
 
 
-public class AddressAttributeConverter implements AttributeConverter<List<Address>, String> {
+public class AddressAttributeConverter implements AttributeConverter<List<AddressModel>, String> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     @Override
-    public String convertToDatabaseColumn(List<Address> addresses) {
+    public String convertToDatabaseColumn(List<AddressModel> addressModels) {
         try {
-            return objectMapper.writeValueAsString(addresses);
+            return objectMapper.writeValueAsString(addressModels);
         } catch (JsonProcessingException jpe) {
             System.out.println("Cannot convert Address into JSON");
             return null;
@@ -26,7 +26,7 @@ public class AddressAttributeConverter implements AttributeConverter<List<Addres
     }
 
     @Override
-    public List<Address> convertToEntityAttribute(String value) {
+    public List<AddressModel> convertToEntityAttribute(String value) {
         if (value == null) {
             return Collections.emptyList();
         }

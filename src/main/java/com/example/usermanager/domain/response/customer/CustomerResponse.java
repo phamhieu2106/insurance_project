@@ -1,6 +1,6 @@
 package com.example.usermanager.domain.response.customer;
 
-import com.example.usermanager.domain.model.Address;
+import com.example.usermanager.domain.model.AddressModel;
 import com.example.usermanager.domain.response.relative.RelativeResponse;
 import com.example.usermanager.enumeration.StatusCustomer;
 import com.example.usermanager.utils.contraint.DateConstant;
@@ -31,9 +31,9 @@ public class CustomerResponse {
     @JsonSerialize(using = DateSerializer.class)
     Date dateOfBirth;
 
-    List<Address> addresses;
+    List<AddressModel> addressModels;
 
-    List<RelativeResponse> relatives;
+    List<RelativeResponse> relativeEntities;
 
     StatusCustomer statusCustomer;
 }

@@ -27,5 +27,5 @@ public class ContractResponse {
     CustomerResponse customer;
     StatusPayment statusPayment;
     StatusContract statusContract;
-    List<InsuranceResponse> insurances;
+    List<InsuranceResponse> insuranceEntities;
 }

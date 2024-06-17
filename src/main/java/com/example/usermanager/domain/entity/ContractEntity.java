@@ -17,7 +17,7 @@ import java.util.List;
 @Entity
 @Table(name = "contract")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Contract {
+public class ContractEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,19 +29,19 @@ public class Contract {
 
     Date contractEndDate;
 
-    Double contractTotalPayAmount;
+    Double contractTotalPayAmount; //tổng phí bảo hiểm hợp đồng
 
-    Double contractTotalInsurancePayAmount;
+    Double contractTotalInsurancePayAmount; //tổng phí loại hình
 
-    Double contractTotalNeedPayAmount;
+    Double contractTotalNeedPayAmount; //tổng phí cần thanh toán
 
-    Double contractTotalPayedAmount;
+    Double contractTotalPayedAmount; //tổng phí đã thanh toán
 
     String customerId;
 
     @Convert(converter = InsuranceAttributeConverter.class)
     @Column(length = 10000)
-    List<Insurance> insurances;
+    List<InsuranceEntity> insuranceEntities;
 
     @Enumerated(EnumType.STRING)
     StatusPayment statusPayment;

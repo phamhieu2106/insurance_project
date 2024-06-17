@@ -2,7 +2,6 @@ package com.example.usermanager.domain.request.insurance;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -13,8 +12,8 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class InsuranceUpdateRequest {
+
     @NotNull
-    @NotEmpty
     @NotBlank
     String insuranceName;
 

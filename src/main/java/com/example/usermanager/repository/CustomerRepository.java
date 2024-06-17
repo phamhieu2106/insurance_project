@@ -1,7 +1,7 @@
 package com.example.usermanager.repository;
 
-import com.example.usermanager.domain.entity.Customer;
-import com.example.usermanager.domain.model.IdentityType;
+import com.example.usermanager.domain.entity.CustomerEntity;
+import com.example.usermanager.domain.model.IdentityModel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CustomerRepository extends JpaRepository<Customer, String> {
+public interface CustomerRepository extends JpaRepository<CustomerEntity, String> {
 
-    List<Customer> findAllBySoftDeleteIsFalse();
+    List<CustomerEntity> findAllBySoftDeleteIsFalse();
 
-    Optional<Customer> findCustomerByIdAndSoftDeleteIsFalse(String id);
+    Optional<CustomerEntity> findCustomerByIdAndSoftDeleteIsFalse(String id);
 
     boolean existsByCustomerCode(String customerCode);
 
@@ -21,13 +21,13 @@ public interface CustomerRepository extends JpaRepository<Customer, String> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    boolean existsCustomerByProof(IdentityType proof);
+    boolean existsCustomerByProof(IdentityModel proof);
 
     boolean existsByEmailAndIdIsNot(String email, String Id);
 
     boolean existsByPhoneNumberAndIdIsNot(String phoneNumber, String id);
 
-    boolean existsCustomerByProofAndIdIsNot(IdentityType proof, String id);
+    boolean existsCustomerByProofAndIdIsNot(IdentityModel proof, String id);
 
     long count();
 }

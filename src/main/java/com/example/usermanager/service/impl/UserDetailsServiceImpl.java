@@ -1,7 +1,7 @@
 package com.example.usermanager.service.impl;
 
-import com.example.usermanager.domain.entity.Admin;
-import com.example.usermanager.domain.entity.User;
+import com.example.usermanager.domain.entity.AdminEntity;
+import com.example.usermanager.domain.entity.UserEntity;
 import com.example.usermanager.repository.AdminRepository;
 import com.example.usermanager.repository.UserRepository;
 import com.example.usermanager.service.UserDetailsService;
@@ -32,12 +32,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("Invalid username provided");
         }
 
-        Optional<User> userOptional = userRepository.findUserByUsernameAndSoftDeleteIsFalse(username);
+        Optional<UserEntity> userOptional = userRepository.findUserByUsernameAndSoftDeleteIsFalse(username);
         if (userOptional.isPresent()) {
             return userOptional.get();
         }
 
-        Optional<Admin> adminOptional = adminRepository.findAdminByUsername(username);
+        Optional<AdminEntity> adminOptional = adminRepository.findAdminByUsername(username);
         if (adminOptional.isPresent()) {
             return adminOptional.get();
         }

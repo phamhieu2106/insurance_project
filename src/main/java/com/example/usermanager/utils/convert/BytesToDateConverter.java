@@ -11,7 +11,7 @@ import java.util.Date;
 
 @Component
 @ReadingConverter
-public class BytesToDateConvert implements Converter<byte[], Date> {
+public class BytesToDateConverter implements Converter<byte[], Date> {
 
 
     @Override

@@ -1,7 +1,7 @@
 package com.example.usermanager.domain.entity;
 
-import com.example.usermanager.domain.model.Address;
-import com.example.usermanager.domain.model.IdentityType;
+import com.example.usermanager.domain.model.AddressModel;
+import com.example.usermanager.domain.model.IdentityModel;
 import com.example.usermanager.enumeration.Gender;
 import com.example.usermanager.enumeration.StatusCustomer;
 import com.example.usermanager.utils.convert.AddressAttributeConverter;
@@ -21,7 +21,7 @@ import java.util.List;
 @Entity
 @Table(name = "customer")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Customer implements Serializable {
+public class CustomerEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,12 +42,12 @@ public class Customer implements Serializable {
 
     @Convert(converter = AddressAttributeConverter.class)
     @Column(length = 10000)
-    List<Address> addresses;
+    List<AddressModel> addressModels;
 
     String jobName;
 
     @Convert(converter = IdentityTypeAttributeConverter.class)
-    IdentityType proof;
+    IdentityModel proof;
 
     @Enumerated(EnumType.STRING)
     StatusCustomer statusCustomer;

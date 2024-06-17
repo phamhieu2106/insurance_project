@@ -13,7 +13,7 @@ import java.util.Date;
 @Entity
 @Table(name = "relative")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Relative {
+public class RelativeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

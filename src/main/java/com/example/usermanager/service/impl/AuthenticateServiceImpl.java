@@ -1,8 +1,8 @@
 package com.example.usermanager.service.impl;
 
 
-import com.example.usermanager.domain.entity.Admin;
-import com.example.usermanager.domain.entity.User;
+import com.example.usermanager.domain.entity.AdminEntity;
+import com.example.usermanager.domain.entity.UserEntity;
 import com.example.usermanager.domain.request.authenticate.LoginRequest;
 import com.example.usermanager.domain.request.user.UserRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
@@ -55,7 +55,7 @@ public class AuthenticateServiceImpl implements AuthenticateService {
             );
         }
 
-        Optional<User> optionalUser = userRepository
+        Optional<UserEntity> optionalUser = userRepository
                 .findUserByUsernameAndSoftDeleteIsFalse(loginRequest.getUsername());
 
         if (optionalUser.isPresent()
@@ -66,7 +66,7 @@ public class AuthenticateServiceImpl implements AuthenticateService {
             );
         }
 
-        Optional<Admin> optionalAdmin = adminRepository.findAdminByUsername(loginRequest.getUsername());
+        Optional<AdminEntity> optionalAdmin = adminRepository.findAdminByUsername(loginRequest.getUsername());
         if (optionalAdmin.isPresent()
                 && passwordEncoder.matches(loginRequest.getPassword(), optionalAdmin.get().getPassword())) {
 
@@ -100,16 +100,16 @@ public class AuthenticateServiceImpl implements AuthenticateService {
             );
         }
 
-        User user = registerRequest.map(new User());
-        user.setUserCode(generateUserCode(userRepository.count()));
-        user.setUsername(registerRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setRole(Role.NHAN_VIEN);
-        user.setCreatedAt(new Date());
-        user.setUserRole(UserRole.USER);
+        UserEntity userEntity = registerRequest.map(new UserEntity());
+        userEntity.setUserCode(generateUserCode(userRepository.count()));
+        userEntity.setUsername(registerRequest.getUsername());
+        userEntity.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        userEntity.setRole(Role.NHAN_VIEN);
+        userEntity.setCreatedAt(new Date());
+        userEntity.setUserRole(UserRole.USER);
 
 
-        UserResponse userResponse = modelMapper.map(userRepository.save(user), UserResponse.class);
+        UserResponse userResponse = modelMapper.map(userRepository.save(userEntity), UserResponse.class);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.CREATED.getReasonPhrase(), userResponse, HttpStatus.CREATED
@@ -136,15 +136,15 @@ public class AuthenticateServiceImpl implements AuthenticateService {
             );
         }
 
-        User user = registerRequest.map(new User());
-        user.setUserCode(generateUserCode(userRepository.count()));
-        user.setUsername(registerRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setUserRole(UserRole.USER);
-        user.setRole(Role.NHAN_VIEN);
-        user.setCreatedAt(new Date());
+        UserEntity userEntity = registerRequest.map(new UserEntity());
+        userEntity.setUserCode(generateUserCode(userRepository.count()));
+        userEntity.setUsername(registerRequest.getUsername());
+        userEntity.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        userEntity.setUserRole(UserRole.USER);
+        userEntity.setRole(Role.NHAN_VIEN);
+        userEntity.setCreatedAt(new Date());
 
-        UserResponse userResponse = modelMapper.map(userRepository.save(user), UserResponse.class);
+        UserResponse userResponse = modelMapper.map(userRepository.save(userEntity), UserResponse.class);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), userResponse, HttpStatus.OK
@@ -155,14 +155,14 @@ public class AuthenticateServiceImpl implements AuthenticateService {
 
     @Override
     public WrapperResponse testAuth() {
-        Admin admin = new Admin();
+        AdminEntity admin = new AdminEntity();
         admin.setUsername("phamhieu2106");
         admin.setPassword(passwordEncoder.encode("123"));
         admin.setAdminName("Pham Hieu");
         admin.setCreatedAt(new Date());
         admin.setCreatedBy("Test-System");
         admin.setUserRole(UserRole.ADMIN);
-        
+
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), adminRepository.save(admin), HttpStatus.OK
         );

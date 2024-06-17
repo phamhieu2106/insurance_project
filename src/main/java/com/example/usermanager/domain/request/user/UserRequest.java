@@ -1,6 +1,6 @@
 package com.example.usermanager.domain.request.user;
 
-import com.example.usermanager.domain.entity.User;
+import com.example.usermanager.domain.entity.UserEntity;
 import com.example.usermanager.enumeration.Role;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
@@ -20,10 +20,10 @@ public class UserRequest {
 
     Role role;
 
-    public User map(User user) {
-        user.setUsername(this.username);
-        user.setPassword(this.password);
-        user.setRole(this.role);
-        return user;
+    public UserEntity map(UserEntity userEntity) {
+        userEntity.setUsername(this.username);
+        userEntity.setPassword(this.password);
+        userEntity.setRole(this.role);
+        return userEntity;
     }
 }

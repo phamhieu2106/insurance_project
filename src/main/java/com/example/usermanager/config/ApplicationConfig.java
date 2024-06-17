@@ -1,7 +1,7 @@
 package com.example.usermanager.config;
 
-import com.example.usermanager.domain.entity.Admin;
-import com.example.usermanager.domain.entity.User;
+import com.example.usermanager.domain.entity.AdminEntity;
+import com.example.usermanager.domain.entity.UserEntity;
 import com.example.usermanager.repository.AdminRepository;
 import com.example.usermanager.repository.UserRepository;
 import org.modelmapper.ModelMapper;
@@ -39,11 +39,11 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return userDetail -> {
-            Optional<User> userOptional = userRepository.findUserByUsernameAndSoftDeleteIsFalse(userDetail);
+            Optional<UserEntity> userOptional = userRepository.findUserByUsernameAndSoftDeleteIsFalse(userDetail);
             if (userOptional.isPresent()) {
                 return userOptional.get();
             } else {
-                Optional<Admin> adminOptional = adminRepository.findAdminByUsername(userDetail);
+                Optional<AdminEntity> adminOptional = adminRepository.findAdminByUsername(userDetail);
                 if (adminOptional.isPresent()) {
                     return adminOptional.get();
                 } else {

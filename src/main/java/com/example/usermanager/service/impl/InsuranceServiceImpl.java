@@ -1,6 +1,6 @@
 package com.example.usermanager.service.impl;
 
-import com.example.usermanager.domain.entity.Insurance;
+import com.example.usermanager.domain.entity.InsuranceEntity;
 import com.example.usermanager.domain.request.insurance.InsuranceAddRequest;
 import com.example.usermanager.domain.request.insurance.InsuranceUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
@@ -49,21 +49,21 @@ public class InsuranceServiceImpl implements InsuranceService {
             );
         }
 
-        if (!validateInsuranceAddRequest(request)) {
+        if (!isValidAddRequest(request)) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
             );
         }
 
-        Insurance insurance = new Insurance();
-        insurance.setInsuranceCode(generateInsuranceCode());
-        insurance.setInsuranceName(request.getInsuranceName());
-        insurance.setTotalPaymentFeeAmount(request.getTotalPaymentFeeAmount());
-        insurance.setTotalInsuranceTotalFeeAmount(request.getTotalInsuranceTotalFeeAmount());
-        insurance.setCreatedAt(new Date());
+        InsuranceEntity insuranceEntity = new InsuranceEntity();
+        insuranceEntity.setInsuranceCode(generateInsuranceCode());
+        insuranceEntity.setInsuranceName(request.getInsuranceName());
+        insuranceEntity.setTotalPaymentFeeAmount(request.getTotalPaymentFeeAmount());
+        insuranceEntity.setTotalInsuranceTotalFeeAmount(request.getTotalInsuranceTotalFeeAmount());
+        insuranceEntity.setCreatedAt(new Date());
 
         InsuranceResponse insuranceResponse = modelMapper
-                .map(insuranceRepository.save(insurance), InsuranceResponse.class);
+                .map(insuranceRepository.save(insuranceEntity), InsuranceResponse.class);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.CREATED.getReasonPhrase(), insuranceResponse, HttpStatus.CREATED
@@ -78,7 +78,7 @@ public class InsuranceServiceImpl implements InsuranceService {
             );
         }
 
-        Optional<Insurance> insuranceOptional = insuranceRepository.findByIdAndSoftDeleteIsFalse(id);
+        Optional<InsuranceEntity> insuranceOptional = insuranceRepository.findByIdAndSoftDeleteIsFalse(id);
 
         if (insuranceOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
@@ -86,10 +86,10 @@ public class InsuranceServiceImpl implements InsuranceService {
             );
         }
 
-        Insurance insurance = insuranceOptional.get();
-        insurance.setSoftDelete(true);
-        insurance.setUpdatedAt(new Date());
-        insuranceRepository.save(insurance);
+        InsuranceEntity insuranceEntity = insuranceOptional.get();
+        insuranceEntity.setSoftDelete(true);
+        insuranceEntity.setUpdatedAt(new Date());
+        insuranceRepository.save(insuranceEntity);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), null, HttpStatus.OK
@@ -104,20 +104,20 @@ public class InsuranceServiceImpl implements InsuranceService {
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
             );
         }
-        
+
         if (request == null) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
             );
         }
 
-        if (!validateInsuranceUpdateRequest(request)) {
+        if (!isValidUpdateRequest(request)) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
             );
         }
 
-        Optional<Insurance> insuranceOptional = insuranceRepository.findByIdAndSoftDeleteIsFalse(id);
+        Optional<InsuranceEntity> insuranceOptional = insuranceRepository.findByIdAndSoftDeleteIsFalse(id);
 
         if (insuranceOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
@@ -125,14 +125,14 @@ public class InsuranceServiceImpl implements InsuranceService {
             );
         }
 
-        Insurance insurance = insuranceOptional.get();
-        insurance.setInsuranceName(request.getInsuranceName());
-        insurance.setTotalPaymentFeeAmount(request.getTotalPaymentFeeAmount());
-        insurance.setTotalInsuranceTotalFeeAmount(request.getTotalInsuranceTotalFeeAmount());
-        insurance.setUpdatedAt(new Date());
+        InsuranceEntity insuranceEntity = insuranceOptional.get();
+        insuranceEntity.setInsuranceName(request.getInsuranceName());
+        insuranceEntity.setTotalPaymentFeeAmount(request.getTotalPaymentFeeAmount());
+        insuranceEntity.setTotalInsuranceTotalFeeAmount(request.getTotalInsuranceTotalFeeAmount());
+        insuranceEntity.setUpdatedAt(new Date());
 
         InsuranceResponse insuranceResponse = modelMapper
-                .map(insuranceRepository.save(insurance), InsuranceResponse.class);
+                .map(insuranceRepository.save(insuranceEntity), InsuranceResponse.class);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), insuranceResponse, HttpStatus.OK
@@ -147,7 +147,7 @@ public class InsuranceServiceImpl implements InsuranceService {
             );
         }
 
-        Optional<Insurance> insuranceOptional = insuranceRepository.findByIdAndSoftDeleteIsFalse(id);
+        Optional<InsuranceEntity> insuranceOptional = insuranceRepository.findByIdAndSoftDeleteIsFalse(id);
 
         if (insuranceOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
@@ -175,7 +175,7 @@ public class InsuranceServiceImpl implements InsuranceService {
         return code;
     }
 
-    private boolean validateInsuranceAddRequest(InsuranceAddRequest request) {
+    private boolean isValidAddRequest(InsuranceAddRequest request) {
         if (request.getInsuranceName() == null || request.getInsuranceName().isEmpty()
                 || request.getInsuranceName().isBlank()) {
             return false;
@@ -193,7 +193,7 @@ public class InsuranceServiceImpl implements InsuranceService {
         return true;
     }
 
-    private boolean validateInsuranceUpdateRequest(InsuranceUpdateRequest request) {
+    private boolean isValidUpdateRequest(InsuranceUpdateRequest request) {
         if (request.getInsuranceName() == null || request.getInsuranceName().isEmpty()
                 || request.getInsuranceName().isBlank()) {
             return false;

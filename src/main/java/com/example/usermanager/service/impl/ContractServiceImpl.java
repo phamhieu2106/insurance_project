@@ -1,8 +1,8 @@
 package com.example.usermanager.service.impl;
 
-import com.example.usermanager.domain.entity.Contract;
-import com.example.usermanager.domain.entity.Customer;
-import com.example.usermanager.domain.entity.Insurance;
+import com.example.usermanager.domain.entity.ContractEntity;
+import com.example.usermanager.domain.entity.CustomerEntity;
+import com.example.usermanager.domain.entity.InsuranceEntity;
 import com.example.usermanager.domain.request.contract.ContractAddRequest;
 import com.example.usermanager.domain.request.contract.ContractUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
@@ -46,23 +46,23 @@ public class ContractServiceImpl implements ContractService {
     @Override
     public WrapperResponse findAll() {
 
-        List<Contract> contracts = contractRepository.findAllBySoftDeleteIsFalse();
+        List<ContractEntity> contractEntities = contractRepository.findAllBySoftDeleteIsFalse();
 
-        List<ContractResponse> contractResponses = contracts.stream().map(
-                contract -> {
-                    List<InsuranceResponse> insuranceResponses = contract.getInsurances().stream()
+        List<ContractResponse> contractResponses = contractEntities.stream().map(
+                contractEntity -> {
+                    List<InsuranceResponse> insuranceResponses = contractEntity.getInsuranceEntities().stream()
                             .map(insurance -> modelMapper.map(insurance, InsuranceResponse.class)).toList();
 
-                    Optional<Customer> customerOptional = this.customerRepository.findById(contract.getCustomerId());
+                    Optional<CustomerEntity> customerOptional = this.customerRepository.findById(contractEntity.getCustomerId());
                     if (customerOptional.isEmpty()) {
-                        throw new NotFoundException("Not found Customer by Id: " + contract.getCustomerId());
+                        throw new NotFoundException("Not found Customer by Id: " + contractEntity.getCustomerId());
                     }
                     CustomerResponse customerResponse = modelMapper.map(
                             customerOptional.get(), CustomerResponse.class);
 
-                    ContractResponse contractResponse = modelMapper.map(contract, ContractResponse.class);
+                    ContractResponse contractResponse = modelMapper.map(contractEntity, ContractResponse.class);
                     contractResponse.setCustomer(customerResponse);
-                    contractResponse.setInsurances(insuranceResponses);
+                    contractResponse.setInsuranceEntities(insuranceResponses);
 
                     return contractResponse;
                 }
@@ -77,64 +77,67 @@ public class ContractServiceImpl implements ContractService {
     @Override
     public WrapperResponse add(ContractAddRequest request) {
 
-        if (!validateContractAddRequest(request)) {
+        if (!isValidAddRequest(request)) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
             );
         }
 
-        Contract contract = new Contract();
-        contract.setContractCode(generateContractCode());
-        contract.setCustomerId(request.getCustomerId());
-        contract.setContractStartDate(request.getContractStartDate());
-        contract.setContractEndDate(request.getContractEndDate());
-        contract.setContractTotalPayedAmount(request.getContractTotalPayedAmount());
-        contract.setCreatedAt(new Date());
-
-        //money amount
-        List<Insurance> insurances = handleInsuranceContract(request.getInsurancesId());
-        List<InsuranceResponse> insuranceResponses = insurances.stream().map(
-                insurance -> modelMapper.map(insurance, InsuranceResponse.class)
-        ).toList();
-        double totalContractPayAmount = insuranceResponses
-                .stream().mapToDouble(InsuranceResponse::getTotalPaymentFeeAmount).sum();
-        double totalInsuranceFeeAmount = insuranceResponses
-                .stream().mapToDouble(InsuranceResponse::getTotalInsuranceTotalFeeAmount).sum();
-        double totalNeedPayAmount = totalContractPayAmount - contract.getContractTotalPayedAmount();
-
-        //set insurance
-        contract.setInsurances(insurances);
-        //set total amount
-        contract.setContractTotalPayAmount(totalContractPayAmount);
-        contract.setContractTotalInsurancePayAmount(totalInsuranceFeeAmount);
-        contract.setContractTotalNeedPayAmount(totalNeedPayAmount);
-
-        //set contract payment status
-        if (totalNeedPayAmount == totalContractPayAmount) contract.setStatusPayment(StatusPayment.NOT_PAY);
-        else if (totalNeedPayAmount == 0) contract.setStatusPayment(StatusPayment.PAYED);
-        else contract.setStatusPayment(StatusPayment.PAYED_HALF);
+        ContractEntity contractEntity = new ContractEntity();
+        contractEntity.setContractCode(generateContractCode());
+        contractEntity.setCustomerId(request.getCustomerId());
+        contractEntity.setContractStartDate(request.getContractStartDate());
+        contractEntity.setContractEndDate(request.getContractEndDate());
+        contractEntity.setContractTotalPayedAmount(request.getContractTotalPayedAmount());
+        contractEntity.setCreatedAt(new Date());
 
         //set contract status
-        long now = DateConstant.convertDateToLong(new Date());
-        long contractStartDate = DateConstant.convertDateToLong(contract.getContractStartDate());
-        long contractEndDate = DateConstant.convertDateToLong(contract.getContractEndDate());
+        Date now = new Date();
+        if (DateConstant.isDate1BeforeDate2(contractEntity.getContractStartDate(), now))
+            contractEntity.setStatusContract(StatusContract.NOT_EFFECT);
+        if (DateConstant.isDate1AfterDate2(contractEntity.getContractStartDate(), now)
+                && DateConstant.isDate1BeforeDate2(now, contractEntity.getContractEndDate()))
+            contractEntity.setStatusContract(StatusContract.EFFECTED);
+        if (DateConstant.isDate1AfterDate2(now, contractEntity.getContractEndDate()))
+            contractEntity.setStatusContract(StatusContract.END_EFFECTED);
 
-        if (now >= contractStartDate && now <= contractEndDate) contract.setStatusContract(StatusContract.EFFECTED);
-        if (now < contractStartDate) contract.setStatusContract(StatusContract.NOT_EFFECT);
+        //money amount
+        List<InsuranceEntity> insuranceEntities = handleGetInsurance(request.getInsurancesId());
+        double totalContractPayAmount = insuranceEntities
+                .stream().mapToDouble(InsuranceEntity::getTotalPaymentFeeAmount).sum();
+        double totalInsuranceFeeAmount = insuranceEntities
+                .stream().mapToDouble(InsuranceEntity::getTotalInsuranceTotalFeeAmount).sum();
+        double totalNeedPayAmount = totalInsuranceFeeAmount - contractEntity.getContractTotalPayedAmount();
+        if (totalNeedPayAmount <= 0) {
+            totalNeedPayAmount = 0;
+            contractEntity.setContractTotalPayedAmount(totalInsuranceFeeAmount);
+        }
+
+        //set insurance
+        contractEntity.setInsuranceEntities(insuranceEntities);
+        //set total amount
+        contractEntity.setContractTotalPayAmount(totalContractPayAmount);
+        contractEntity.setContractTotalInsurancePayAmount(totalInsuranceFeeAmount);
+        contractEntity.setContractTotalNeedPayAmount(totalNeedPayAmount);
+
+        //set contract payment status
+        if (totalNeedPayAmount == totalInsuranceFeeAmount) contractEntity.setStatusPayment(StatusPayment.NOT_PAY);
+        else if (totalNeedPayAmount == 0) contractEntity.setStatusPayment(StatusPayment.PAYED);
+        else contractEntity.setStatusPayment(StatusPayment.PAYED_HALF);
+
 
         //CustomerResponse
-        Customer customer = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(
+        CustomerEntity customerEntity = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(
                 request.getCustomerId()).orElse(null);
         CustomerResponse customerResponse = modelMapper.map(
-                customer
+                customerEntity
                 , CustomerResponse.class
         );
 
         //convert Contract to ContractResponse
         ContractResponse contractResponse = modelMapper.map(
-                this.contractRepository.save(contract), ContractResponse.class);
+                this.contractRepository.save(contractEntity), ContractResponse.class);
         contractResponse.setCustomer(customerResponse);
-//        contractResponse.setInsurances(insuranceResponses);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), contractResponse, HttpStatus.OK
@@ -149,7 +152,7 @@ public class ContractServiceImpl implements ContractService {
             );
         }
 
-        Optional<Contract> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
+        Optional<ContractEntity> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
 
         if (contractOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
@@ -157,9 +160,9 @@ public class ContractServiceImpl implements ContractService {
             );
         }
 
-        Contract contract = contractOptional.get();
-        contract.setSoftDelete(true);
-        this.contractRepository.save(contract);
+        ContractEntity contractEntity = contractOptional.get();
+        contractEntity.setSoftDelete(true);
+        this.contractRepository.save(contractEntity);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), null, HttpStatus.OK
@@ -174,80 +177,90 @@ public class ContractServiceImpl implements ContractService {
             );
         }
 
-        if (!validateContractUpdateRequest(request)) {
+        if (!isValidUpdateRequest(request)) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
             );
         }
 
-        Optional<Contract> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
+        Optional<ContractEntity> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
         if (contractOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
             );
         }
 
-        Contract contract = contractOptional.get();
+        ContractEntity contractEntity = contractOptional.get();
 
-        //check StartDate
-        if (DateConstant.convertDateToLong(contract.getContractStartDate())
-                > DateConstant.convertDateToLong(request.getContractStartDate())) {
-            return WrapperResponse.returnResponse(
-                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
-            );
-        }
+        //check Date
         if (DateConstant.convertDateToLong(request.getContractStartDate())
-                != DateConstant.convertDateToLong(contract.getContractStartDate())
-                && StatusContract.EFFECTED.equals(contract.getStatusContract())) {
+                != DateConstant.convertDateToLong(contractEntity.getContractStartDate())
+                && StatusContract.EFFECTED.equals(contractEntity.getStatusContract())) {
 
             return WrapperResponse.returnResponse(
                     false, "Contract effected and can not change start date!"
                     , null, HttpStatus.BAD_REQUEST
             );
         }
-        if (StatusContract.CANCELLED.equals(contract.getStatusContract())) {
+        if (StatusContract.CANCELLED.equals(contractEntity.getStatusContract())) {
             return WrapperResponse.returnResponse(
                     false, "Contract cancelled!"
                     , null, HttpStatus.BAD_REQUEST
             );
         }
-        contract.setContractStartDate(request.getContractStartDate());
-        contract.setContractEndDate(request.getContractEndDate());
-        contract.setStatusContract(request.getStatusContract());
-        contract.setContractTotalPayedAmount(request.getContractTotalPayedAmount());
-        contract.setUpdatedAt(new Date());
+        contractEntity.setContractStartDate(request.getContractStartDate());
+        contractEntity.setContractEndDate(request.getContractEndDate());
+        contractEntity.setContractTotalPayedAmount(request.getContractTotalPayedAmount());
+        contractEntity.setUpdatedAt(new Date());
 
-        List<Insurance> insurances = handleInsuranceContract(request.getInsurancesId());
-        List<InsuranceResponse> insuranceResponses = insurances.stream().map(
-                insurance -> modelMapper.map(insurance, InsuranceResponse.class)
-        ).toList();
-        double totalContractPayAmount = insuranceResponses
-                .stream().mapToDouble(InsuranceResponse::getTotalPaymentFeeAmount).sum();
-        double totalInsuranceFeeAmount = insuranceResponses
-                .stream().mapToDouble(InsuranceResponse::getTotalInsuranceTotalFeeAmount).sum();
-        double totalNeedPayAmount = totalContractPayAmount - contract.getContractTotalPayedAmount();
+        //set contract status
+        Date now = new Date();
 
+        if (DateConstant.isDate1BeforeDate2(contractEntity.getContractStartDate(), now))
+            contractEntity.setStatusContract(StatusContract.NOT_EFFECT);
+        if (DateConstant.isDate1AfterDate2(contractEntity.getContractStartDate(), now)
+                && DateConstant.isDate1BeforeDate2(now, contractEntity.getContractEndDate()))
+            contractEntity.setStatusContract(StatusContract.EFFECTED);
+        if (DateConstant.isDate1AfterDate2(now, contractEntity.getContractEndDate()))
+            contractEntity.setStatusContract(StatusContract.END_EFFECTED);
 
+        //money amount
+        List<InsuranceEntity> insuranceEntities = handleGetInsurance(request.getInsurancesId());
+        double totalContractPayAmount = insuranceEntities
+                .stream().mapToDouble(InsuranceEntity::getTotalPaymentFeeAmount).sum();
+        double totalInsuranceFeeAmount = insuranceEntities
+                .stream().mapToDouble(InsuranceEntity::getTotalInsuranceTotalFeeAmount).sum();
+        double totalNeedPayAmount = totalInsuranceFeeAmount - contractEntity.getContractTotalPayedAmount();
+        if (totalNeedPayAmount <= 0) {
+            totalNeedPayAmount = 0;
+            contractEntity.setContractTotalPayedAmount(totalInsuranceFeeAmount);
+        }
+
+        //set insurance
+        contractEntity.setInsuranceEntities(insuranceEntities);
         //set total amount
-        contract.setContractTotalPayAmount(totalContractPayAmount);
-        contract.setContractTotalInsurancePayAmount(totalInsuranceFeeAmount);
-        contract.setContractTotalNeedPayAmount(totalNeedPayAmount);
+        contractEntity.setContractTotalPayAmount(totalContractPayAmount);
+        contractEntity.setContractTotalInsurancePayAmount(totalInsuranceFeeAmount);
+        contractEntity.setContractTotalNeedPayAmount(totalNeedPayAmount);
 
-        //
-        if (totalNeedPayAmount == totalContractPayAmount) contract.setStatusPayment(StatusPayment.NOT_PAY);
-        else if (totalNeedPayAmount == 0) contract.setStatusPayment(StatusPayment.PAYED);
-        else contract.setStatusPayment(StatusPayment.PAYED_HALF);
+        //set contract payment status
+        if (totalNeedPayAmount == totalInsuranceFeeAmount) contractEntity.setStatusPayment(StatusPayment.NOT_PAY);
+        else if (totalNeedPayAmount == 0) contractEntity.setStatusPayment(StatusPayment.PAYED);
+        else contractEntity.setStatusPayment(StatusPayment.PAYED_HALF);
 
-        //convert Contract to ContractResponse
+
+        //CustomerResponse
+        CustomerEntity customerEntity = customerRepository.findCustomerByIdAndSoftDeleteIsFalse(
+                request.getCustomerId()).orElse(null);
         CustomerResponse customerResponse = modelMapper.map(
-                this.customerRepository.findById(contract.getCustomerId())
+                customerEntity
                 , CustomerResponse.class
         );
 
+        //convert Contract to ContractResponse
         ContractResponse contractResponse = modelMapper.map(
-                this.contractRepository.save(contract), ContractResponse.class);
+                this.contractRepository.save(contractEntity), ContractResponse.class);
         contractResponse.setCustomer(customerResponse);
-        contractResponse.setInsurances(insuranceResponses);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), contractResponse, HttpStatus.OK
@@ -263,43 +276,99 @@ public class ContractServiceImpl implements ContractService {
             );
         }
 
-        Optional<Contract> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
+        Optional<ContractEntity> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
         if (contractOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
             );
         }
 
-        Contract contract = contractOptional.get();
+        ContractEntity contractEntity = contractOptional.get();
 
         CustomerResponse customerResponse = modelMapper.map(
-                this.customerRepository.findById(contract.getCustomerId()).orElse(null)
+                this.customerRepository.findById(contractEntity.getCustomerId()).orElse(null)
                 , CustomerResponse.class
         );
 
-        List<InsuranceResponse> insurances = contract.getInsurances().stream().map(
-                insurance -> modelMapper.map(
-                        insurance, InsuranceResponse.class
-                )
-        ).toList();
-
-        ContractResponse contractResponse = modelMapper.map(contract, ContractResponse.class);
+        ContractResponse contractResponse = modelMapper.map(contractEntity, ContractResponse.class);
         contractResponse.setCustomer(customerResponse);
-        contractResponse.setInsurances(insurances);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), contractResponse, HttpStatus.OK
         );
     }
 
-    private List<Insurance> handleInsuranceContract(List<String> insuranceIds) {
+    @Override
+    public WrapperResponse findAllByCustomerId(String customerId) {
+        if (customerId == null || customerId.isEmpty() || customerId.isBlank()) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
+        }
+
+        List<ContractEntity> contractEntities = this.contractRepository
+                .findAllByCustomerIdAndSoftDeleteIsFalse(customerId);
+
+        if (contractEntities.isEmpty()) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
+        }
+
+
+        CustomerResponse customerResponse = modelMapper.map(
+                this.customerRepository.findById(customerId).orElse(null), CustomerResponse.class);
+
+        List<ContractResponse> contractResponses = contractEntities.stream().map(
+                contractEntity -> {
+                    ContractResponse response = modelMapper.map(contractEntity, ContractResponse.class);
+                    response.setCustomer(customerResponse);
+                    return response;
+                }
+        ).toList();
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), contractResponses, HttpStatus.OK
+        );
+    }
+
+    @Override
+    public void updateContractStatus(Date date) {
+        this.contractRepository.updateStatusContract(date);
+    }
+
+    @Override
+    public WrapperResponse cancelContract(String id) {
+        if (id == null || id.isEmpty() || id.isBlank()) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.BAD_REQUEST.getReasonPhrase(), null, HttpStatus.BAD_REQUEST
+            );
+        }
+
+
+        Optional<ContractEntity> contractOptional = this.contractRepository.findByIdAndSoftDeleteIsFalse(id);
+        if (contractOptional.isEmpty()) {
+            return WrapperResponse.returnResponse(
+                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
+            );
+        }
+        ContractEntity contractEntity = contractOptional.get();
+        contractEntity.setStatusContract(StatusContract.CANCELLED);
+        this.contractRepository.save(contractEntity);
+
+        return WrapperResponse.returnResponse(
+                true, HttpStatus.OK.getReasonPhrase(), null, HttpStatus.OK
+        );
+    }
+
+    private List<InsuranceEntity> handleGetInsurance(List<String> insuranceIds) {
         return insuranceIds.stream().map(
                 id -> {
-                    Insurance insurance = this.insuranceRepository.findById(id).orElse(null);
-                    if (insurance == null) {
+                    InsuranceEntity insuranceEntity = this.insuranceRepository.findById(id).orElse(null);
+                    if (insuranceEntity == null) {
                         throw new NotFoundException("Null Insurance!");
                     }
-                    return insurance;
+                    return insuranceEntity;
                 }
         ).toList();
     }
@@ -317,43 +386,40 @@ public class ContractServiceImpl implements ContractService {
         return code;
     }
 
-    private boolean validateContractAddRequest(ContractAddRequest request) {
+    private boolean isValidAddRequest(ContractAddRequest request) {
         if (request == null) return false;
 
         if (request.getCustomerId() == null
                 || request.getCustomerId().isEmpty()
                 || request.getCustomerId().isBlank()
-                || this.contractRepository.existsByCustomerIdAndStatusContractNot(
-                request.getCustomerId(), StatusContract.CANCELLED)) return false;
+                || !this.customerRepository.existsById(request.getCustomerId())) return false;
 
         if (request.getContractStartDate() == null) return false;
         if (request.getContractEndDate() == null) return false;
 
-        if (request.getInsurancesId().isEmpty()) return false;
+        if (DateConstant.isDate1AfterDate2(request.getContractStartDate(), request.getContractEndDate())) return false;
 
-        if (DateConstant.convertDateToLong(request.getContractStartDate())
-                >= DateConstant.convertDateToLong(request.getContractEndDate())) return false;
-        if (DateConstant.convertDateToLong(new Date())
-                >= DateConstant.convertDateToLong(request.getContractEndDate())) return false;
+        if (request.getInsurancesId().isEmpty()) return false;
 
         return true;
     }
 
-    private boolean validateContractUpdateRequest(ContractUpdateRequest request) {
+    private boolean isValidUpdateRequest(ContractUpdateRequest request) {
         if (request == null) return false;
 
+
+        if (request.getCustomerId() == null
+                || request.getCustomerId().isEmpty()
+                || request.getCustomerId().isBlank()
+                || !this.customerRepository.existsById(request.getCustomerId())) return false;
 
         if (request.getContractStartDate() == null) return false;
         if (request.getContractEndDate() == null) return false;
 
+        if (DateConstant.isDate1AfterDate2(request.getContractStartDate(), request.getContractEndDate())) return false;
+
         if (request.getInsurancesId().isEmpty()) return false;
 
-        if (DateConstant.convertDateToLong(request.getContractStartDate())
-                >= DateConstant.convertDateToLong(request.getContractEndDate())) return false;
-        if (DateConstant.convertDateToLong(new Date())
-                >= DateConstant.convertDateToLong(request.getContractEndDate())) return false;
-
-        if (request.getStatusContract() == null) return false;
 
         return true;
     }

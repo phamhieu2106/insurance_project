@@ -1,6 +1,6 @@
 package com.example.usermanager.service.impl;
 
-import com.example.usermanager.domain.entity.User;
+import com.example.usermanager.domain.entity.UserEntity;
 import com.example.usermanager.domain.request.user.UserRequest;
 import com.example.usermanager.domain.request.user.UserUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
@@ -72,17 +72,17 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        Optional<User> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
+        Optional<UserEntity> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
         if (userOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
             );
         }
 
-        User user = userOptional.get();
-        user.setSoftDelete(true);
+        UserEntity userEntity = userOptional.get();
+        userEntity.setSoftDelete(true);
 
-        userRepository.save(user);
+        userRepository.save(userEntity);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), null, HttpStatus.OK
@@ -99,18 +99,18 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        Optional<User> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
+        Optional<UserEntity> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
         if (userOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
             );
         }
 
-        User user = userOptional.get();
-        user.setRole(request.getRole());
-        user.setUpdatedAt(new Date());
+        UserEntity userEntity = userOptional.get();
+        userEntity.setRole(request.getRole());
+        userEntity.setUpdatedAt(new Date());
 
-        UserResponse userResponse = modelMapper.map(userRepository.save(user), UserResponse.class);
+        UserResponse userResponse = modelMapper.map(userRepository.save(userEntity), UserResponse.class);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.OK.getReasonPhrase(), userResponse, HttpStatus.OK
@@ -125,15 +125,15 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        Optional<User> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
+        Optional<UserEntity> userOptional = userRepository.findUserByIdAndSoftDeleteIsFalse(id);
         if (userOptional.isEmpty()) {
             return WrapperResponse.returnResponse(
                     false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
             );
         }
 
-        User user = userOptional.get();
-        UserResponse userResponse = modelMapper.map(user, UserResponse.class);
+        UserEntity userEntity = userOptional.get();
+        UserResponse userResponse = modelMapper.map(userEntity, UserResponse.class);
 
         return WrapperResponse.returnResponse(
                 true, HttpStatus.FOUND.getReasonPhrase(), userResponse, HttpStatus.FOUND

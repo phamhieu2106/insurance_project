@@ -1,7 +1,7 @@
 package com.example.usermanager.domain.request.contract;
 
-import com.example.usermanager.enumeration.StatusContract;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,6 +17,10 @@ import java.util.List;
 public class ContractUpdateRequest {
 
     @NotNull
+    @NotBlank
+    String customerId;
+    
+    @NotNull
     Date contractStartDate;
 
     @NotNull
@@ -28,7 +32,5 @@ public class ContractUpdateRequest {
     @NotNull
     @Min(value = 0)
     Double contractTotalPayedAmount;
-
-    StatusContract statusContract;
 
 }

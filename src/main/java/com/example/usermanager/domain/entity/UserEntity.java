@@ -1,5 +1,7 @@
 package com.example.usermanager.domain.entity;
 
+
+import com.example.usermanager.enumeration.Role;
 import com.example.usermanager.enumeration.UserRole;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -14,25 +16,29 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+
 @Getter
 @Setter
 @Entity
-@Table(name = "admin")
+@Table(name = "users")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Admin implements UserDetails {
+public class UserEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
+    String userCode;
     String username;
-
-    String adminName;
-
     String password;
 
     @Enumerated(EnumType.STRING)
-    UserRole userRole = UserRole.ADMIN;
+    Role role;
+
+    @Enumerated(EnumType.STRING)
+    UserRole userRole;
+
+    Boolean softDelete = false;
 
     Date createdAt;
 
@@ -41,7 +47,6 @@ public class Admin implements UserDetails {
     Date updatedAt;
 
     String lastUpdatedBy;
-
 
     @Override
     public boolean isAccountNonExpired() {

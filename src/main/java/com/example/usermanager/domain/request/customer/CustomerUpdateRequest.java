@@ -1,12 +1,11 @@
 package com.example.usermanager.domain.request.customer;
 
-import com.example.usermanager.domain.entity.Relative;
-import com.example.usermanager.domain.model.Address;
-import com.example.usermanager.domain.model.IdentityType;
+import com.example.usermanager.domain.entity.RelativeEntity;
+import com.example.usermanager.domain.model.AddressModel;
+import com.example.usermanager.domain.model.IdentityModel;
 import com.example.usermanager.enumeration.Gender;
 import com.example.usermanager.enumeration.StatusCustomer;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,7 +22,6 @@ public class CustomerUpdateRequest {
 
     @NotNull
     @NotBlank
-    @NotEmpty
     String customerName;
 
     @NotNull
@@ -31,26 +29,24 @@ public class CustomerUpdateRequest {
 
     @NotNull
     @NotBlank
-    @NotEmpty
     String phoneNumber;
 
     @NotNull
     @NotBlank
-    @NotEmpty
     String email;
 
     @NotNull
     Date dateOfBirth;
 
     @NotNull
-    List<Address> addresses;
+    List<AddressModel> addressModels;
 
     String jobName;
 
     @NotNull
-    IdentityType proof;
+    IdentityModel proof;
 
     StatusCustomer statusCustomer;
 
-    List<Relative> relatives;
+    List<RelativeEntity> relativeEntities;
 }

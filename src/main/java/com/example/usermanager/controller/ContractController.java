@@ -29,6 +29,11 @@ public class ContractController {
         return this.contractService.find(id);
     }
 
+    @GetMapping("/find-by-customerId/{id}")
+    public WrapperResponse getContractByCustomerId(@PathVariable String id) {
+        return this.contractService.findAllByCustomerId(id);
+    }
+
     @PostMapping
     public WrapperResponse addContract(@Valid @RequestBody ContractAddRequest request) {
         return this.contractService.add(request);
@@ -43,5 +48,11 @@ public class ContractController {
     @DeleteMapping("/{id}")
     public WrapperResponse deleteContract(@PathVariable String id) {
         return this.contractService.delete(id);
+    }
+
+    @DeleteMapping("/cancel-contract/{id}")
+    public WrapperResponse cancelContract(@PathVariable String id) {
+        System.out.println(".");
+        return this.contractService.cancelContract(id);
     }
 }

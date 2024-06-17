@@ -2,7 +2,6 @@ package com.example.usermanager.domain.request.contract;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,7 +17,6 @@ import java.util.List;
 public class ContractAddRequest {
 
     @NotNull
-    @NotEmpty
     @NotBlank
     String customerId;
 
@@ -33,6 +31,5 @@ public class ContractAddRequest {
 
     @NotNull
     List<String> insurancesId;
-
 
 }
