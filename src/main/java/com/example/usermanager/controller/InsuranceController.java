@@ -4,6 +4,8 @@ import com.example.usermanager.domain.request.insurance.InsuranceAddRequest;
 import com.example.usermanager.domain.request.insurance.InsuranceUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.service.InsuranceService;
+import com.example.usermanager.utils.contraint.PageConstant;
+import com.example.usermanager.utils.specific.InsuranceSpecifications;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +22,19 @@ public class InsuranceController {
     }
 
     @GetMapping
-    public WrapperResponse findAll() {
-        return this.insuranceService.findAll();
+    public WrapperResponse findAll(
+            @RequestParam(name = "pageNumber",
+                    required = false, defaultValue = PageConstant.PAGE_NUMBER) int pageNumber,
+            @RequestParam(name = "pageSize",
+                    required = false, defaultValue = PageConstant.PAGE_SIZE) int pageSize,
+            @RequestParam(name = "sortBy",
+                    required = false, defaultValue = InsuranceSpecifications.INSURANCE_CODE) String sortBy,
+            @RequestParam(name = "sortBy",
+                    required = false, defaultValue = PageConstant.PAGE_SORT_TYPE) String sortType,
+            @RequestParam(name = "keyword",
+                    required = false, defaultValue = PageConstant.PAGE_DEFAULT_VALUE) String keyword
+    ) {
+        return this.insuranceService.findAll(pageNumber, pageSize, sortBy, sortType, keyword);
     }
 
     @GetMapping("/{id}")

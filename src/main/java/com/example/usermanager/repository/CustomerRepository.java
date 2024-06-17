@@ -3,15 +3,14 @@ package com.example.usermanager.repository;
 import com.example.usermanager.domain.entity.CustomerEntity;
 import com.example.usermanager.domain.model.IdentityModel;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CustomerRepository extends JpaRepository<CustomerEntity, String> {
+public interface CustomerRepository extends JpaRepository<CustomerEntity, String>, JpaSpecificationExecutor<CustomerEntity> {
 
-    List<CustomerEntity> findAllBySoftDeleteIsFalse();
 
     Optional<CustomerEntity> findCustomerByIdAndSoftDeleteIsFalse(String id);
 

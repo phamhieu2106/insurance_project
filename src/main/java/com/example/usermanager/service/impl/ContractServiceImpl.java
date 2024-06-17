@@ -17,8 +17,16 @@ import com.example.usermanager.repository.CustomerRepository;
 import com.example.usermanager.repository.InsuranceRepository;
 import com.example.usermanager.service.ContractService;
 import com.example.usermanager.utils.contraint.DateConstant;
+import com.example.usermanager.utils.contraint.PageConstant;
+import com.example.usermanager.utils.specific.ContractSpecifications;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +35,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class ContractServiceImpl implements ContractService {
 
     private final ContractRepository contractRepository;
@@ -34,21 +44,16 @@ public class ContractServiceImpl implements ContractService {
     private final CustomerRepository customerRepository;
     private final ModelMapper modelMapper;
 
-    @Autowired
-    public ContractServiceImpl(ContractRepository contractRepository
-            , InsuranceRepository insuranceRepository, CustomerRepository customerRepository, ModelMapper modelMapper) {
-        this.contractRepository = contractRepository;
-        this.insuranceRepository = insuranceRepository;
-        this.customerRepository = customerRepository;
-        this.modelMapper = modelMapper;
-    }
-
     @Override
-    public WrapperResponse findAll() {
+    public WrapperResponse findAll(int pageNumber, int pageSize, String sortBy, String sortType, String keyword,
+                                   String statusPayment, String statusContract) {
 
-        List<ContractEntity> contractEntities = contractRepository.findAllBySoftDeleteIsFalse();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
+        Specification<ContractEntity> spec = ContractSpecifications
+                .withKeywordAndStatus(keyword, statusPayment, statusContract);
+        Page<ContractEntity> contracts = contractRepository.findAll(spec, pageable);
 
-        List<ContractResponse> contractResponses = contractEntities.stream().map(
+        List<ContractResponse> contractResponses = contracts.stream().map(
                 contractEntity -> {
                     List<InsuranceResponse> insuranceResponses = contractEntity.getInsuranceEntities().stream()
                             .map(insurance -> modelMapper.map(insurance, InsuranceResponse.class)).toList();
@@ -68,9 +73,12 @@ public class ContractServiceImpl implements ContractService {
                 }
         ).toList();
 
+        Page<ContractResponse> pageResponse = new PageImpl<>(
+                contractResponses, pageable, contracts.getTotalElements()
+        );
 
         return WrapperResponse.returnResponse(
-                true, HttpStatus.OK.getReasonPhrase(), contractResponses, HttpStatus.OK
+                true, HttpStatus.OK.getReasonPhrase(), pageResponse, HttpStatus.OK
         );
     }
 
@@ -215,7 +223,6 @@ public class ContractServiceImpl implements ContractService {
 
         //set contract status
         Date now = new Date();
-
         if (DateConstant.isDate1BeforeDate2(contractEntity.getContractStartDate(), now))
             contractEntity.setStatusContract(StatusContract.NOT_EFFECT);
         if (DateConstant.isDate1AfterDate2(contractEntity.getContractStartDate(), now)
@@ -423,4 +430,5 @@ public class ContractServiceImpl implements ContractService {
 
         return true;
     }
+
 }

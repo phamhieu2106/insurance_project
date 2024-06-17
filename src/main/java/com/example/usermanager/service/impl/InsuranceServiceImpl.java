@@ -7,8 +7,16 @@ import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.insurance.InsuranceResponse;
 import com.example.usermanager.repository.InsuranceRepository;
 import com.example.usermanager.service.InsuranceService;
+import com.example.usermanager.utils.contraint.PageConstant;
+import com.example.usermanager.utils.specific.InsuranceSpecifications;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,26 +25,29 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class InsuranceServiceImpl implements InsuranceService {
 
     private final InsuranceRepository insuranceRepository;
     private final ModelMapper modelMapper;
 
-    @Autowired
-    public InsuranceServiceImpl(InsuranceRepository insuranceRepository, ModelMapper modelMapper) {
-        this.insuranceRepository = insuranceRepository;
-        this.modelMapper = modelMapper;
-    }
-
-
     @Override
-    public WrapperResponse findAll() {
-        List<InsuranceResponse> insurances =
-                insuranceRepository.findAllBySoftDeleteIsFalse().stream()
-                        .map(insurance -> modelMapper.map(insurance, InsuranceResponse.class)).toList();
+    public WrapperResponse findAll(int pageNumber, int pageSize, String sortBy, String sortType, String keyword) {
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
+        Specification<InsuranceEntity> spec = InsuranceSpecifications.withSpec(keyword);
+        Page<InsuranceEntity> entityPage = this.insuranceRepository.findAll(spec, pageable);
+
+        List<InsuranceResponse> insurances = entityPage.stream()
+                .map(insurance -> modelMapper.map(insurance, InsuranceResponse.class)).toList();
+
+        //        Create Response Page
+        Page<InsuranceResponse> responsePage = new PageImpl<>(
+                insurances, pageable, entityPage.getTotalElements());
 
         return WrapperResponse.returnResponse(
-                true, HttpStatus.OK.getReasonPhrase(), insurances, HttpStatus.OK
+                true, HttpStatus.OK.getReasonPhrase(), responsePage, HttpStatus.OK
         );
     }
 

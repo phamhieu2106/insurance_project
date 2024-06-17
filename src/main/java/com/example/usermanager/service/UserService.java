@@ -6,4 +6,7 @@ import com.example.usermanager.domain.response.WrapperResponse;
 
 public interface UserService extends IService<UserRequest, UserUpdateRequest> {
     WrapperResponse update(UserUpdateRequest request, String id);
+
+    WrapperResponse findAll(int pageNumber, int pageSize, String sortBy,
+                            String sortType, String keyword, String role);
 }

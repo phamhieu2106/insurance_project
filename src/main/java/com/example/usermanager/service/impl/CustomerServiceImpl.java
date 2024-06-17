@@ -14,13 +14,20 @@ import com.example.usermanager.exception.InvalidValueException;
 import com.example.usermanager.repository.CustomerRepository;
 import com.example.usermanager.repository.RelativeRepository;
 import com.example.usermanager.service.CustomerService;
+import com.example.usermanager.utils.contraint.PageConstant;
 import com.example.usermanager.utils.contraint.RegexConstant;
+import com.example.usermanager.utils.specific.CustomerSpecifications;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +37,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class CustomerServiceImpl implements CustomerService {
 
     private final String CUSTOMER_VALUE_NAME = "customerResponse";
@@ -40,20 +49,17 @@ public class CustomerServiceImpl implements CustomerService {
     private final ModelMapper modelMapper;
     private final CacheManager cacheManager;
 
-    @Autowired
-    public CustomerServiceImpl(CustomerRepository customerRepository,
-                               RelativeRepository relativeRepository
-            , ModelMapper modelMapper, CacheManager cacheManager) {
-        super();
-        this.customerRepository = customerRepository;
-        this.relativeRepository = relativeRepository;
-        this.modelMapper = modelMapper;
-        this.cacheManager = cacheManager;
-    }
 
     @Override
-    public WrapperResponse findAll() {
-        List<CustomerResponse> list = this.customerRepository.findAllBySoftDeleteIsFalse().stream()
+    public WrapperResponse findAllCustomer(int pageNumber, int pageSize, String sortBy,
+                                           String sortType, String keyword, String statusCustomer) {
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
+        Specification<CustomerEntity> spec = CustomerSpecifications.withKeywordAndStatus(keyword, statusCustomer);
+        Page<CustomerEntity> customerEntityPage = this.customerRepository.findAll(spec, pageable);
+
+//        Map to List Customer Response
+        List<CustomerResponse> customerResponses = customerEntityPage.stream()
                 .map(customerEntity -> {
                     List<RelativeResponse> relatives =
                             this.relativeRepository.findAllByCustomerIdAndSoftDeleteIsFalse(customerEntity.getId())
@@ -65,10 +71,15 @@ public class CustomerServiceImpl implements CustomerService {
                     return customerResponse;
                 }).toList();
 
+//        Create Response Page
+        Page<CustomerResponse> responsePage = new PageImpl<>(
+                customerResponses, pageable, customerEntityPage.getTotalElements());
+
         return WrapperResponse.returnResponse(
-                true, HttpStatus.OK.getReasonPhrase(), list, HttpStatus.OK
+                true, HttpStatus.OK.getReasonPhrase(), responsePage, HttpStatus.OK
         );
     }
+
 
     @Override
     @Transactional(rollbackOn = InvalidValueException.class)
@@ -131,7 +142,6 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    @Transactional
     public WrapperResponse update(CustomerUpdateRequest request, String id) {
 
         if (id == null || id.isEmpty() || id.isBlank()) {
@@ -426,10 +436,8 @@ public class CustomerServiceImpl implements CustomerService {
             case PASSPORT -> {
                 return RegexConstant.REGEX_PASSPORT.matcher(identityType.getNumberIdentity()).matches();
             }
-            default -> {
-                return false;
-            }
         }
+        return false;
     }
 
     private boolean isValidPhoneNumber(String phoneNumber) {
@@ -478,4 +486,5 @@ public class CustomerServiceImpl implements CustomerService {
             customerResponseCache.evict(CUSTOMER_KEY_NAME + customerId);
         }
     }
+
 }

@@ -13,8 +13,9 @@ import com.example.usermanager.repository.AdminRepository;
 import com.example.usermanager.repository.UserRepository;
 import com.example.usermanager.service.AuthenticateService;
 import com.example.usermanager.service.JwtService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,8 @@ import java.util.Date;
 import java.util.Optional;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class AuthenticateServiceImpl implements AuthenticateService {
 
     private final UserRepository userRepository;
@@ -31,16 +34,6 @@ public class AuthenticateServiceImpl implements AuthenticateService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
     private final JwtService jwtService;
-
-    @Autowired
-    public AuthenticateServiceImpl(UserRepository userRepository, AdminRepository adminRepository
-            , PasswordEncoder passwordEncoder, ModelMapper modelMapper, JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.adminRepository = adminRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.modelMapper = modelMapper;
-        this.jwtService = jwtService;
-    }
 
     @Override
     public WrapperResponse authenticate(LoginRequest loginRequest) {

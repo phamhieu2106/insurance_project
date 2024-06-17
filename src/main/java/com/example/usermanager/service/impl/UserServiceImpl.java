@@ -8,8 +8,16 @@ import com.example.usermanager.domain.response.user.UserResponse;
 import com.example.usermanager.repository.UserRepository;
 import com.example.usermanager.service.AuthenticateService;
 import com.example.usermanager.service.UserService;
+import com.example.usermanager.utils.contraint.PageConstant;
+import com.example.usermanager.utils.specific.UserSpecifications;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final ModelMapper modelMapper;
@@ -25,27 +35,24 @@ public class UserServiceImpl implements UserService {
     private final AuthenticateService authenticateService;
 
 
-    @Autowired
-    public UserServiceImpl(ModelMapper modelMapper
-            , UserRepository userRepository, AuthenticateService authenticateService) {
-        this.modelMapper = modelMapper;
-        this.userRepository = userRepository;
-        this.authenticateService = authenticateService;
-    }
-
     @Override
-    public WrapperResponse findAll() {
-        List<UserResponse> userResponses = userRepository.findAllBySoftDeleteIsFalse()
-                .stream().map(user -> modelMapper.map(user, UserResponse.class)).toList();
+    public WrapperResponse findAll(int pageNumber, int pageSize, String sortBy,
+                                   String sortType, String keyword, String role) {
 
-        if (userResponses.isEmpty()) {
-            return WrapperResponse.returnResponse(
-                    false, HttpStatus.NOT_FOUND.getReasonPhrase(), null, HttpStatus.NOT_FOUND
-            );
-        }
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
+        Specification<UserEntity> specification = UserSpecifications.withKeywordAndRole(keyword, role);
+        Page<UserEntity> usersPage = userRepository.findAll(specification, pageable);
+
+        List<UserResponse> userResponses = usersPage.getContent()
+                .stream().map(
+                        user -> modelMapper.map(user, UserResponse.class)
+                ).toList();
+
+        Page<UserResponse> responsePage = new PageImpl<>(userResponses, pageable, usersPage.getTotalElements());
 
         return WrapperResponse.returnResponse(
-                true, HttpStatus.OK.getReasonPhrase(), userResponses, HttpStatus.OK
+                true, HttpStatus.OK.getReasonPhrase(),
+                responsePage, HttpStatus.OK
         );
     }
 

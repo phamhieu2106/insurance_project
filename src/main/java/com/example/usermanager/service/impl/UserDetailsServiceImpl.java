@@ -5,7 +5,7 @@ import com.example.usermanager.domain.entity.UserEntity;
 import com.example.usermanager.repository.AdminRepository;
 import com.example.usermanager.repository.UserRepository;
 import com.example.usermanager.service.UserDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -14,16 +14,12 @@ import java.util.Optional;
 
 
 @Service
+@RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
 
-    @Autowired
-    public UserDetailsServiceImpl(UserRepository userRepository, AdminRepository adminRepository) {
-        this.userRepository = userRepository;
-        this.adminRepository = adminRepository;
-    }
 
     @Override
     public UserDetails loadUserByUsername(String username) {

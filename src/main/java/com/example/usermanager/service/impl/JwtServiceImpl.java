@@ -22,10 +22,6 @@ public class JwtServiceImpl implements JwtService {
     @Value("${JWT_SECRET_KEY}")
     private String SECRET_KEY;
 
-    public JwtServiceImpl() {
-        super();
-    }
-
     @Override
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

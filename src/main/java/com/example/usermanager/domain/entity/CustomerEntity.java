@@ -41,7 +41,7 @@ public class CustomerEntity implements Serializable {
     Date dateOfBirth;
 
     @Convert(converter = AddressAttributeConverter.class)
-    @Column(length = 10000)
+    @Column(length = 10000) //jsonb?
     List<AddressModel> addressModels;
 
     String jobName;

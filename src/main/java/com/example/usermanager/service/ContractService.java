@@ -13,4 +13,7 @@ public interface ContractService extends IService<ContractAddRequest, ContractUp
     void updateContractStatus(Date date);
 
     WrapperResponse cancelContract(String id);
+
+    WrapperResponse findAll(int pageNumber, int pageSize, String sortBy, String sortType, String keyword,
+                            String statusPayment, String statusContract);
 }

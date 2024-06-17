@@ -23,6 +23,7 @@ import java.util.List;
 public class CustomerResponse {
     String id;
     String customerName;
+    String customerCode;
     String email;
     String phoneNumber;
 

@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 @Component
 public interface IService<Q, U> {
 
-    WrapperResponse findAll();
-
     WrapperResponse add(Q request);
 
     WrapperResponse delete(String id);
