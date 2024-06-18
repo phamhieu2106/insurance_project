@@ -1,11 +1,10 @@
 package com.example.usermanager.controller;
 
 import com.example.usermanager.domain.request.contract.ContractAddRequest;
+import com.example.usermanager.domain.request.contract.ContractPageRequest;
 import com.example.usermanager.domain.request.contract.ContractUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.service.ContractService;
-import com.example.usermanager.utils.contraint.PageConstant;
-import com.example.usermanager.utils.specific.ContractSpecifications;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,22 +22,8 @@ public class ContractController {
 
     @GetMapping
     public WrapperResponse getContracts(
-            @RequestParam(name = "pageNumber",
-                    required = false, defaultValue = PageConstant.PAGE_NUMBER) int pageNumber,
-            @RequestParam(name = "pageSize",
-                    required = false, defaultValue = PageConstant.PAGE_SIZE) int pageSize,
-            @RequestParam(name = "sortBy",
-                    required = false, defaultValue = ContractSpecifications.CONTRACT_CODE) String sortBy,
-            @RequestParam(name = "sortType",
-                    required = false, defaultValue = PageConstant.PAGE_SORT_TYPE) String sortType,
-            @RequestParam(name = "keyword",
-                    required = false, defaultValue = PageConstant.PAGE_DEFAULT_VALUE) String keyword,
-            @RequestParam(name = "statusPayment",
-                    required = false, defaultValue = PageConstant.PAGE_DEFAULT_VALUE) String statusPayment,
-            @RequestParam(name = "statusContract",
-                    required = false, defaultValue = PageConstant.PAGE_DEFAULT_VALUE) String statusContract
-    ) {
-        return this.contractService.findAll(pageNumber, pageSize, sortBy, sortType, keyword, statusPayment, statusContract);
+            @RequestBody ContractPageRequest request) {
+        return this.contractService.findAll(request);
     }
 
     @GetMapping("/{id}")

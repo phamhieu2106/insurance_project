@@ -4,6 +4,7 @@ import com.example.usermanager.domain.entity.ContractEntity;
 import com.example.usermanager.domain.entity.CustomerEntity;
 import com.example.usermanager.domain.entity.InsuranceEntity;
 import com.example.usermanager.domain.request.contract.ContractAddRequest;
+import com.example.usermanager.domain.request.contract.ContractPageRequest;
 import com.example.usermanager.domain.request.contract.ContractUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.contract.ContractResponse;
@@ -45,12 +46,12 @@ public class ContractServiceImpl implements ContractService {
     private final ModelMapper modelMapper;
 
     @Override
-    public WrapperResponse findAll(int pageNumber, int pageSize, String sortBy, String sortType, String keyword,
-                                   String statusPayment, String statusContract) {
+    public WrapperResponse findAll(ContractPageRequest request) {
 
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
+        Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize()
+                , PageConstant.getSortBy(request.getSortBys(), request.getSortOrder()));
         Specification<ContractEntity> spec = ContractSpecifications
-                .withKeywordAndStatus(keyword, statusPayment, statusContract);
+                .withKeywordAndStatus(request.getKeyword(), request.getStatusPayment(), request.getStatusContract());
         Page<ContractEntity> contracts = contractRepository.findAll(spec, pageable);
 
         List<ContractResponse> contractResponses = contracts.stream().map(
@@ -340,8 +341,13 @@ public class ContractServiceImpl implements ContractService {
     }
 
     @Override
-    public void updateContractStatus(Date date) {
-        this.contractRepository.updateStatusContract(date);
+    public void updateContractStatusNotEffect(Date date) {
+        this.contractRepository.updateStatusContractNotEffect(date);
+    }
+
+    @Override
+    public void updateContractStatusEffected(Date date) {
+        this.contractRepository.updateStatusContractEffected(date);
     }
 
     @Override

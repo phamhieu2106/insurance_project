@@ -2,11 +2,10 @@ package com.example.usermanager.controller;
 
 import com.example.usermanager.domain.request.customer.CustomerAddRequest;
 import com.example.usermanager.domain.request.customer.CustomerUpdateRequest;
+import com.example.usermanager.domain.request.customer.PageCustomerRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.customer.CustomerResponse;
 import com.example.usermanager.service.CustomerService;
-import com.example.usermanager.utils.contraint.PageConstant;
-import com.example.usermanager.utils.specific.CustomerSpecifications;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,21 +23,8 @@ public class CustomerController {
     }
 
     @GetMapping
-    public WrapperResponse findAll(
-            @RequestParam(name = "pageNumber",
-                    required = false, defaultValue = PageConstant.PAGE_NUMBER) int pageNumber,
-            @RequestParam(name = "pageSize",
-                    required = false, defaultValue = PageConstant.PAGE_SIZE) int pageSize,
-            @RequestParam(name = "sortBy",
-                    required = false, defaultValue = CustomerSpecifications.CUSTOMER_CODE) String sortBy,
-            @RequestParam(name = "sortType",
-                    required = false, defaultValue = PageConstant.PAGE_SORT_TYPE) String sortType,
-            @RequestParam(name = "keyword",
-                    required = false, defaultValue = PageConstant.PAGE_DEFAULT_VALUE) String keyword,
-            @RequestParam(name = "status",
-                    required = false, defaultValue = PageConstant.PAGE_DEFAULT_VALUE) String statusCustomer
-    ) {
-        return this.customerService.findAllCustomer(pageNumber, pageSize, sortBy, sortType, keyword, statusCustomer);
+    public WrapperResponse findAll(@RequestBody PageCustomerRequest request) {
+        return this.customerService.findAllCustomer(request);
     }
 
     @GetMapping("/{id}")

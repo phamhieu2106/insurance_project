@@ -1,6 +1,7 @@
 package com.example.usermanager.service.impl;
 
 import com.example.usermanager.domain.entity.UserEntity;
+import com.example.usermanager.domain.request.user.UserPageRequest;
 import com.example.usermanager.domain.request.user.UserRequest;
 import com.example.usermanager.domain.request.user.UserUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
@@ -36,11 +37,12 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public WrapperResponse findAll(int pageNumber, int pageSize, String sortBy,
-                                   String sortType, String keyword, String role) {
+    public WrapperResponse findAll(UserPageRequest request) {
 
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
-        Specification<UserEntity> specification = UserSpecifications.withKeywordAndRole(keyword, role);
+        Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize()
+                , PageConstant.getSortBy(request.getSortBys(), request.getSortOrder()));
+        Specification<UserEntity> specification = UserSpecifications.withKeywordAndRole(
+                request.getKeyword(), request.getRole());
         Page<UserEntity> usersPage = userRepository.findAll(specification, pageable);
 
         List<UserResponse> userResponses = usersPage.getContent()

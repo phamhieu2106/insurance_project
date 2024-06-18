@@ -1,6 +1,7 @@
 package com.example.usermanager.service;
 
 import com.example.usermanager.domain.request.contract.ContractAddRequest;
+import com.example.usermanager.domain.request.contract.ContractPageRequest;
 import com.example.usermanager.domain.request.contract.ContractUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 
@@ -10,10 +11,11 @@ public interface ContractService extends IService<ContractAddRequest, ContractUp
 
     WrapperResponse findAllByCustomerId(String customerId);
 
-    void updateContractStatus(Date date);
+    void updateContractStatusNotEffect(Date date);
+
+    void updateContractStatusEffected(Date date);
 
     WrapperResponse cancelContract(String id);
 
-    WrapperResponse findAll(int pageNumber, int pageSize, String sortBy, String sortType, String keyword,
-                            String statusPayment, String statusContract);
+    WrapperResponse findAll(ContractPageRequest request);
 }

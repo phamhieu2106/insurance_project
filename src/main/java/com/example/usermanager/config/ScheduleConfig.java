@@ -21,6 +21,8 @@ public class ScheduleConfig {
 
     @Scheduled(cron = "0 * * * * *", zone = "Asia/Ho_Chi_Minh")
     private void contractStatusSchedule() {
-        contractService.updateContractStatus(new Date());
+        Date now = new Date();
+        contractService.updateContractStatusNotEffect(now);
+        contractService.updateContractStatusEffected(now);
     }
 }

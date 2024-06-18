@@ -42,4 +42,5 @@ public class CustomerSpecifications {
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.isFalse(root.get(SOFT_DELETE));
     }
+
 }

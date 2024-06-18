@@ -24,14 +24,21 @@ public interface ContractRepository extends JpaRepository<ContractEntity, String
 
     @Query(value = """
              UPDATE ContractEntity c
-             SET c.statusContract =
-             CASE\s
-                 WHEN :now < c.contractStartDate THEN "NOT_EFFECT"
-                 WHEN :now >= c.contractStartDate AND :now <= c.contractEndDate THEN "EFFECTED"
-                 WHEN :now > c.contractEndDate THEN "END_EFFECTED"
-             END
-            \s""")
+             SET c.statusContract = "EFFECTED"
+             WHERE c.statusContract = "NOT_EFFECT"
+             AND :now >= c.contractStartDate AND :now <= c.contractEndDate
+            """)
     @Modifying
     @Transactional
-    void updateStatusContract(Date now);
+    void updateStatusContractNotEffect(Date now);
+
+    @Query(value = """
+             UPDATE ContractEntity c
+             SET c.statusContract = "END_EFFECTED"
+             WHERE c.statusContract = "EFFECTED"
+             AND :now > c.contractEndDate
+            """)
+    @Modifying
+    @Transactional
+    void updateStatusContractEffected(Date now);
 }

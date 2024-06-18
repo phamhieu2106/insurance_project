@@ -2,6 +2,7 @@ package com.example.usermanager.service.impl;
 
 import com.example.usermanager.domain.entity.InsuranceEntity;
 import com.example.usermanager.domain.request.insurance.InsuranceAddRequest;
+import com.example.usermanager.domain.request.insurance.InsurancePageRequest;
 import com.example.usermanager.domain.request.insurance.InsuranceUpdateRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.insurance.InsuranceResponse;
@@ -33,10 +34,11 @@ public class InsuranceServiceImpl implements InsuranceService {
     private final ModelMapper modelMapper;
 
     @Override
-    public WrapperResponse findAll(int pageNumber, int pageSize, String sortBy, String sortType, String keyword) {
+    public WrapperResponse findAll(InsurancePageRequest request) {
 
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
-        Specification<InsuranceEntity> spec = InsuranceSpecifications.withSpec(keyword);
+        Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize(),
+                PageConstant.getSortBy(request.getSortBys(), request.getSortOrder()));
+        Specification<InsuranceEntity> spec = InsuranceSpecifications.withSpec(request.getKeyword());
         Page<InsuranceEntity> entityPage = this.insuranceRepository.findAll(spec, pageable);
 
         List<InsuranceResponse> insurances = entityPage.stream()

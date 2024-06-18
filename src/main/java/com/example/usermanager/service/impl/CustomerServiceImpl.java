@@ -6,6 +6,7 @@ import com.example.usermanager.domain.model.AddressModel;
 import com.example.usermanager.domain.model.IdentityModel;
 import com.example.usermanager.domain.request.customer.CustomerAddRequest;
 import com.example.usermanager.domain.request.customer.CustomerUpdateRequest;
+import com.example.usermanager.domain.request.customer.PageCustomerRequest;
 import com.example.usermanager.domain.response.WrapperResponse;
 import com.example.usermanager.domain.response.customer.CustomerResponse;
 import com.example.usermanager.domain.response.relative.RelativeResponse;
@@ -51,11 +52,13 @@ public class CustomerServiceImpl implements CustomerService {
 
 
     @Override
-    public WrapperResponse findAllCustomer(int pageNumber, int pageSize, String sortBy,
-                                           String sortType, String keyword, String statusCustomer) {
+    public WrapperResponse findAllCustomer(PageCustomerRequest request) {
 
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, PageConstant.getSortBy(sortBy, sortType));
-        Specification<CustomerEntity> spec = CustomerSpecifications.withKeywordAndStatus(keyword, statusCustomer);
+//        Get Page
+        Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize()
+                , PageConstant.getSortBy(request.getSortBys(), request.getSortOrder()));
+        Specification<CustomerEntity> spec = CustomerSpecifications.withKeywordAndStatus(
+                request.getKeyword(), request.getStatusCustomer());
         Page<CustomerEntity> customerEntityPage = this.customerRepository.findAll(spec, pageable);
 
 //        Map to List Customer Response
@@ -70,6 +73,7 @@ public class CustomerServiceImpl implements CustomerService {
                     customerResponse.setRelativeEntities(relatives);
                     return customerResponse;
                 }).toList();
+
 
 //        Create Response Page
         Page<CustomerResponse> responsePage = new PageImpl<>(
